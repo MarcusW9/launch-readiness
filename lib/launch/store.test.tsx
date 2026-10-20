@@ -2,18 +2,16 @@
 import { act, render, renderHook, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { SEED_PRODUCTS } from "./data";
-import { DEMO_TODAY } from "./readiness";
 import { LaunchProvider, useLaunch } from "./store";
+import { makeProduct } from "./testing/fixtures";
 
-const PRODUCT_ID = "5678901";
+const PRODUCTS = [makeProduct({ id: "100", name: "Armchair" }), makeProduct({ id: "200", name: "Table" })];
 
-const wrapperFor = (products = SEED_PRODUCTS) =>
-  function Wrapper({ children }: { children: ReactNode }) {
-    return <LaunchProvider initialProducts={products}>{children}</LaunchProvider>;
-  };
+const wrapper = ({ children }: { children: ReactNode }) => (
+  <LaunchProvider initialProducts={PRODUCTS}>{children}</LaunchProvider>
+);
 
-const renderStore = (products = SEED_PRODUCTS) => renderHook(() => useLaunch(), { wrapper: wrapperFor(products) });
+const renderStore = () => renderHook(() => useLaunch(), { wrapper });
 
 describe("LaunchProvider", () => {
   beforeEach(() => {
@@ -27,7 +25,7 @@ describe("LaunchProvider", () => {
 
   it("renders its children", () => {
     render(
-      <LaunchProvider initialProducts={SEED_PRODUCTS}>
+      <LaunchProvider initialProducts={PRODUCTS}>
         <p>Inside the store</p>
       </LaunchProvider>,
     );
@@ -35,115 +33,72 @@ describe("LaunchProvider", () => {
     expect(screen.getByText("Inside the store")).toBeInTheDocument();
   });
 
-  it("starts with the products it was given", () => {
+  it("starts with the products it was given and finds one by ID", () => {
     const { result } = renderStore();
 
-    expect(result.current.products).toBe(SEED_PRODUCTS);
+    expect(result.current.products).toBe(PRODUCTS);
+    expect(result.current.getProduct("200")?.name).toBe("Table");
+    expect(result.current.getProduct("missing")).toBeUndefined();
   });
 
-  it("finds a product by ID and returns undefined for an unknown ID", () => {
+  it("adds a note stamped with the demo date and the real time of day", () => {
     const { result } = renderStore();
 
-    expect(result.current.getProduct(PRODUCT_ID)?.name).toBe("Little Acorn Wooden Play Kitchen");
-    expect(result.current.getProduct("0000000")).toBeUndefined();
+    act(() => result.current.addProductNote("100", { text: "Called the supplier", author: "Sam", role: "commercial" }));
+
+    expect(result.current.getProduct("100")?.notes?.[0]).toMatchObject({ text: "Called the supplier", at: "2026-11-10T09:05" });
   });
 
-  it("provides information, stamping it with the demo date and the real time of day", () => {
+  it("edits a field and leaves the other products alone", () => {
     const { result } = renderStore();
-    expect(result.current.getProduct(PRODUCT_ID)?.information["sample-availability"]).toBeUndefined();
 
-    act(() => result.current.provideInformation(PRODUCT_ID, "sample-availability", "Sample arrives Monday"));
+    act(() => result.current.editField("100", "title", "Renamed"));
 
-    const info = result.current.getProduct(PRODUCT_ID)?.information["sample-availability"];
-    expect(info).toEqual({ value: "Sample arrives Monday", source: "team", at: `${DEMO_TODAY}T09:05` });
+    expect(result.current.getProduct("100")?.name).toBe("Renamed");
+    expect(result.current.getProduct("200")).toBe(PRODUCTS[1]);
   });
 
-  it("adds a note to an activity, newest first", () => {
-    const { result } = renderStore();
-    const before = result.current.getProduct(PRODUCT_ID)?.activities["studio-imagery"]?.notes.length ?? 0;
-
-    act(() => result.current.addNote(PRODUCT_ID, "studio-imagery", "Chased the supplier"));
-
-    const notes = result.current.getProduct(PRODUCT_ID)?.activities["studio-imagery"]?.notes ?? [];
-    expect(notes).toHaveLength(before + 1);
-    expect(notes[0]).toMatchObject({ author: "You", text: "Chased the supplier" });
-  });
-
-  it("flags work as blocked and then clears the blocker", () => {
+  it("changes the launch date and records the change", () => {
     const { result } = renderStore();
 
-    act(() => result.current.setBlocked(PRODUCT_ID, "studio-imagery", "Waiting on the supplier"));
-    expect(result.current.getProduct(PRODUCT_ID)?.activities["studio-imagery"]).toMatchObject({
-      blocked: true,
-      blockedReason: "Waiting on the supplier",
+    act(() => result.current.changeLaunchDate("100", "2027-02-01"));
+
+    expect(result.current.getProduct("100")).toMatchObject({
+      launchDate: "2027-02-01",
+      previousLaunchDate: "2026-12-30",
+      launchDateChangedOn: "2026-11-10",
     });
-
-    act(() => result.current.setBlocked(PRODUCT_ID, "studio-imagery", null));
-    expect(result.current.getProduct(PRODUCT_ID)?.activities["studio-imagery"]?.blocked).toBe(false);
   });
 
-  it("moves work to another stage and records it in the history", () => {
-    const { result } = renderStore();
-    const current = result.current.getProduct(PRODUCT_ID)?.activities["product-setup"];
-    expect(current).toBeDefined();
-
-    act(() => result.current.setStage(PRODUCT_ID, "product-setup", "in-progress"));
-
-    const moved = result.current.getProduct(PRODUCT_ID)?.activities["product-setup"];
-    expect(moved?.history.length).toBeGreaterThanOrEqual((current?.history.length ?? 0));
-  });
-
-  it("gives every history entry and note a unique ID", () => {
+  it("gives every note a unique ID", () => {
     const { result } = renderStore();
 
     act(() => {
-      result.current.addNote(PRODUCT_ID, "studio-imagery", "One");
-      result.current.addNote(PRODUCT_ID, "studio-imagery", "Two");
+      result.current.addProductNote("100", { text: "One", author: "Sam", role: "commercial" });
+      result.current.addProductNote("100", { text: "Two", author: "Sam", role: "commercial" });
     });
 
-    const ids = result.current.getProduct(PRODUCT_ID)?.activities["studio-imagery"]?.notes.map((note) => note.id) ?? [];
-    expect(new Set(ids).size).toBe(ids.length);
-  });
-
-  it("leaves the other products alone when one changes", () => {
-    const { result } = renderStore();
-    const other = SEED_PRODUCTS.find((product) => product.id !== PRODUCT_ID)!;
-
-    act(() => result.current.addNote(PRODUCT_ID, "studio-imagery", "Only here"));
-
-    expect(result.current.getProduct(other.id)).toBe(other);
+    const ids = result.current.getProduct("100")?.notes?.map((note) => note.id) ?? [];
+    expect(new Set(ids).size).toBe(2);
   });
 
   it("resets every change back to the starting demo data", () => {
     const { result } = renderStore();
 
     act(() => {
-      result.current.addNote(PRODUCT_ID, "studio-imagery", "Temporary");
-      result.current.provideInformation(PRODUCT_ID, "sample-availability", "Soon");
+      result.current.editField("100", "title", "Renamed");
+      result.current.changeLaunchDate("200", "2027-02-01");
     });
-    expect(result.current.products).not.toBe(SEED_PRODUCTS);
-
     act(() => result.current.resetDemoData());
 
-    expect(result.current.products).toBe(SEED_PRODUCTS);
+    expect(result.current.products).toBe(PRODUCTS);
   });
 
-  it("keeps the same action functions between renders when nothing has changed", () => {
-    const { result, rerender } = renderStore();
-    const first = result.current.getProduct;
-
-    rerender();
-
-    expect(result.current.getProduct).toBe(first);
-  });
-});
-
-describe("useLaunch", () => {
-  it("fails loudly when used outside a LaunchProvider", () => {
-    const quiet = vi.spyOn(console, "error").mockImplementation(() => {});
+  it("refuses to be used outside the provider", () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
     expect(() => renderHook(() => useLaunch())).toThrow("useLaunch must be used inside LaunchProvider");
 
-    quiet.mockRestore();
+    spy.mockRestore();
   });
 });

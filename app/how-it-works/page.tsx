@@ -2,23 +2,20 @@ import type { Metadata } from "next";
 import { DownloadButton } from "@/components/launch/download-button";
 import {
   ActionRequiredTour,
-  ActivityPageTour,
   ChangelogHistory,
   GuideContents,
   OverviewTour,
   PageAnatomy,
   ProductPageTour,
   ProductsTour,
-  ProvideInformationTour,
   SearchAndFilter,
   TestsGuide,
   ThemeAndDevices,
   UnderTheHood,
   WhatsNewInLatest,
-  WorkStatesGuide,
 } from "@/components/launch/guide-sections";
 import {
-  ActivityGuide,
+  SlaGuide,
   Limits,
   ReadinessStatuses,
   TheModel,
@@ -61,10 +58,7 @@ export default function HowItWorksPage() {
       <ProductsTour />
       <ActionRequiredTour />
       <ProductPageTour />
-      <ProvideInformationTour />
-      <ActivityGuide />
-      <WorkStatesGuide />
-      <ActivityPageTour />
+      <SlaGuide />
       <SearchAndFilter />
       <ThemeAndDevices />
       <Walkthrough />

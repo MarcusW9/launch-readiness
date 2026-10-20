@@ -1,14 +1,12 @@
 import type { ReactNode } from "react";
 import { ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LaunchStatusPill, ReadinessPill } from "@/components/launch/status";
-import { ACTIVITY_DEFINITIONS, ACTIVITY_ORDER } from "@/lib/launch/activities";
+import { Pill } from "@/components/launch/status";
 import { LATEST_RELEASE } from "@/lib/launch/guide-content";
-import { AT_RISK_WITHIN_DAYS } from "@/lib/launch/readiness";
+import { MANDATORY_FIELDS, SLA_CONFIG, WORKING_DAYS_LIMITATION } from "@/lib/launch/readiness-config";
 import { DownloadButton } from "./download-button";
 import { LinkButton } from "./link-button";
 import { SectionHeading } from "./page-frame";
-import { Steps } from "./steps";
 
 export function Section({
   id,
@@ -49,52 +47,43 @@ export function WhatItIs() {
   return (
     <Section id="what-it-is" title="What Launch Readiness is">
       <p>
-        Every new product needs a number of things to happen before it can go on sale: the product record set up,
-        imagery produced, content written, variants created, compliance signed off. Today that progress is tracked in
-        large spreadsheets, which makes it hard to see what is finished, what is waiting on someone, and what is about
-        to cause a missed launch.
+        Every new product needs information before downstream teams can start work: the title, brand, channels,
+        barcode and more. Today that progress is tracked in large spreadsheets, which makes it hard to see what is
+        complete, what is waiting on someone, and what is about to cause a missed launch.
       </p>
       <p>
-        This prototype shows a different approach. Each product has its own list of the activities it needs, and each
-        activity needs certain information before work can begin. The tool shows what is already known, what is
-        genuinely missing and who needs to provide it. Activity statuses then roll up into one overall readiness
-        answer: is this product ready to launch, and if not, what is stopping it?
+        This prototype tracks one thing: is the mandatory product information complete, and if it is, will the
+        downstream teams have enough time before the launch date? Commercial / Range Planning owns the information and
+        the Proposed Launch Date. The downstream team can see everything and chase what is missing.
       </p>
     </Section>
   );
 }
 
-const MODEL_STEPS = ["Product", "Requirements", "Information", "Work state", "Action", "Ready"].map((label) => ({
-  label,
-  status: "complete" as const,
-}));
-
 export function TheModel() {
   return (
     <Section
       id="the-model"
-      title="The idea in six steps"
-      intro="Everything in the prototype follows this chain, from a product through to a launch-ready answer."
+      title="The idea in three steps"
+      intro="Everything in the prototype follows this chain, from a product record through to a launch status."
     >
-      <Steps steps={MODEL_STEPS} />
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <InfoCard title="1. Product and requirements">
+        <InfoCard title="1. Mandatory information">
           <p>
-            A product&apos;s characteristics decide what it needs. A product with several sizes needs Variants. An
-            own-brand product needs Studio Imagery. A regulated product needs Compliance.
+            {MANDATORY_FIELDS.length} fields are mandatory. A value of N/A or a spreadsheet error such as #N/A counts
+            as missing. Optional fields never block anything.
           </p>
         </InfoCard>
-        <InfoCard title="2. Information and work state">
+        <InfoCard title="2. The SLA starts">
           <p>
-            Each activity lists the information it needs. Existing product data is never asked for again; only
-            genuinely missing items are requested. An activity is then Unable to start, Ready to start, In
-            Progress, Blocked or Complete. Activities that do not apply are Not Required.
+            Once the last mandatory field is completed the SLA starts. It runs for {SLA_CONFIG.defaultWorkingDays}{" "}
+            working days by default, and 25 for a Guest bed. Both numbers are placeholders.
           </p>
         </InfoCard>
-        <InfoCard title="3. Action and ready">
+        <InfoCard title="3. Launch status">
           <p>
-            If anything required is outstanding, the product needs action. When every required activity is complete,
-            the product is Ready.
+            The SLA Projection Date is the start date plus the SLA working days. If that is later than the launch date,
+            the launch expectation is at risk.
           </p>
         </InfoCard>
       </div>
@@ -106,92 +95,66 @@ export function ReadinessStatuses() {
   return (
     <Section
       id="readiness"
-      title="What the readiness statuses mean"
-      intro="Every product shows one overall status, worked out automatically from its required activities."
+      title="What the statuses mean"
+      intro="Every product that is still being prepared shows one of three statuses, worked out automatically."
     >
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <InfoCard title={<ReadinessPill readiness="Ready" />}>
-          <p>Every required activity is complete. Nothing more is needed to launch.</p>
+        <InfoCard title={<Pill tone="success">On Track</Pill>}>
+          <p>Mandatory information is complete and the SLA Projection Date is on or before the launch date.</p>
         </InfoCard>
-        <InfoCard title={<ReadinessPill readiness="Action Required" />}>
-          <p>At least one required activity is not finished, and there is still time to do it.</p>
-        </InfoCard>
-        <InfoCard title={<ReadinessPill readiness="At Risk" />}>
+        <InfoCard title={<Pill tone="warning">Information Incomplete</Pill>}>
           <p>
-            Work is outstanding and the launch date is within {AT_RISK_WITHIN_DAYS} days. This is the most urgent
-            state.
+            At least one mandatory field is missing, so the SLA has not started. The product page lists exactly what is
+            missing.
           </p>
         </InfoCard>
-      </div>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <InfoCard title={<LaunchStatusPill status="Live" />}>
-          <p>The product has launched and is on sale. There is no work left to track.</p>
-        </InfoCard>
-        <InfoCard title={<LaunchStatusPill status="Offsale" />}>
-          <p>The product was on sale and has been withdrawn. It is no longer being prepared.</p>
-        </InfoCard>
-        <InfoCard title={<LaunchStatusPill status="Dropped" />}>
-          <p>The product was cancelled before launch. Its activities show Not applicable.</p>
+        <InfoCard title={<Pill tone="danger">Expectation At Risk</Pill>}>
+          <p>
+            The information is complete, but the SLA Projection Date falls after the launch date, or the launch date has
+            already passed.
+          </p>
         </InfoCard>
       </div>
       <p className="text-sm text-muted-foreground">
         Live, Offsale and Dropped products stay in the Products table but are left out of the overview counts and the
-        Action Required page. The At Risk rule is a placeholder for testing. The real definition has not been agreed.
+        Action Required page. {WORKING_DAYS_LIMITATION}
       </p>
     </Section>
   );
 }
 
-const APPLIES_WHEN: Record<(typeof ACTIVITY_ORDER)[number], string> = {
-  "product-setup": "Every product",
-  variants: "The product is sold in more than one size or colour",
-  "studio-imagery": "The product is photographed in the in-house studio, such as own-brand products",
-  "supplier-imagery": "The supplier provides the images",
-  "product-content": "Every product",
-  compliance: "The product has regulated characteristics, such as safety or labelling requirements",
-};
-
-export function ActivityGuide() {
+export function SlaGuide() {
   return (
     <Section
-      id="activities"
-      title="The launch activities"
-      intro="Six activities are modelled. Which ones a product needs depends on what the product is."
+      id="sla"
+      title="How the SLA is worked out"
+      intro="The SLA is the time downstream teams need once information is complete."
     >
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {ACTIVITY_ORDER.map((key) => {
-          const def = ACTIVITY_DEFINITIONS[key];
-          return (
-            <InfoCard key={key} title={def.name}>
-              <p>{def.description}</p>
-              <p className="text-sm text-muted-foreground">
-                <strong>Needed when:</strong> {APPLIES_WHEN[key]}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                <strong>Owner:</strong> {def.ownerTeam}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                <strong>Done when:</strong> {def.doneWhen}
-              </p>
-            </InfoCard>
-          );
-        })}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <InfoCard title="Start date">
+          <p>
+            The SLA starts on the date the last mandatory field was completed. If any mandatory field is missing, the
+            SLA does not start and there is no projection.
+          </p>
+        </InfoCard>
+        <InfoCard title="Projection date">
+          <p>
+            SLA Projection Date = start date plus the SLA working days. Changing the Proposed Launch Date changes the
+            outcome straight away, and the product page shows the reason.
+          </p>
+        </InfoCard>
       </div>
-      <p>
-        Studio Imagery has a fuller workflow (Required, Briefed, In Progress, Complete) because it hands work to
-        another team. The other activities move through Not Started, In Progress and Complete.
-      </p>
     </Section>
   );
 }
 
 const WALKTHROUGH = [
-  "Open Action Required and find the Little Acorn Wooden Play Kitchen. It lists the work outstanding and the information still needed.",
-  "Open the product. Read what is stopping it from being ready, then review the Information section to see what is known and what is missing.",
-  "Choose Provide on a missing item, enter the details and save. The item moves to Available and the requirements that were waiting on it update.",
-  "Open the Studio Imagery activity. Read the brief and the next action, then use the workflow buttons to move it forward.",
-  "Choose Mark complete. The activity, the product page and the readiness status all update.",
-  "Go back to Action Required. Once everything is done the product drops off the list and the count in the navigation goes down.",
+  "Open Action Required. Products are grouped by Expectation At Risk and Information Incomplete, with what is holding each one back.",
+  "Open a product. The timeline shows when information was completed, when the SLA ends and the launch date.",
+  "Use the role switcher in the header to act as Commercial / Range Planning.",
+  "As Commercial, edit a missing field in Product information and save. The status and SLA update straight away.",
+  "Change the Proposed Launch Date and watch the status change between On Track and Expectation At Risk.",
+  "Switch back to Downstream and use Remind Commercial to chase every product with missing information.",
   "Select Reset demo data in the strip at the top whenever you want to start again.",
 ] as const;
 
@@ -224,8 +187,8 @@ export function Limits() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <InfoCard title="It is a prototype">
           <p>
-            All products, IDs and statuses are fictional. Nothing is connected to a real system, and there is no
-            real sign-in or notification sending. The demo user in the header is a stand-in.
+            All products, IDs and statuses are fictional. Nothing is connected to a real system, and there is no real
+            sign-in or notification sending. The role switcher in the header is a stand-in for real sign-in.
           </p>
         </InfoCard>
         <InfoCard title="Changes are temporary">

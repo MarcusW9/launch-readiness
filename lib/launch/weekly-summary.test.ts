@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { SEED_PRODUCTS as INITIAL_PRODUCTS } from "./data";
+import { SEED_PRODUCTS } from "./data";
 import { EMPTY_FILTERS } from "./filters";
-import { INFORMATION_ORDER } from "./information";
-import { summariseReadiness } from "./readiness";
-import { makeProduct, stateAt, withoutInformation } from "./testing/fixtures";
+import { assessProduct } from "./readiness-model";
+import { makeProduct, withMissingFields } from "./testing/fixtures";
 import {
   ALL_ACTIVE_LABEL,
   addWorkingDays,
@@ -14,16 +13,20 @@ import {
   workingDaysBetween,
 } from "./weekly-summary";
 
-const outstanding = { characteristics: { hasVariants: true }, activities: { variants: stateAt("not-started") } };
-
-const atRisk = makeProduct({ id: "1", name: "Risky Rug", criticalPath: "AW26 PH1", launchDate: "2026-11-17", ...outstanding });
-const incompleteSoon = withoutInformation(
-  makeProduct({ id: "2", name: "Soon Sofa", criticalPath: "AW26 PH1", launchDate: "2026-12-04", ...outstanding }),
-  INFORMATION_ORDER[0],
+const atRisk = makeProduct({
+  id: "1",
+  name: "Risky Rug",
+  criticalPath: "AW26 PH1",
+  launchDate: "2026-11-20",
+  infoCompleteAt: "2026-11-02",
+});
+const incompleteSoon = withMissingFields(
+  makeProduct({ id: "2", name: "Soon Sofa", criticalPath: "AW26 PH1", launchDate: "2026-12-04" }),
+  "supplierName",
 );
-const incompleteLater = withoutInformation(
-  makeProduct({ id: "3", name: "Later Lamp", criticalPath: "AW26 PH1", launchDate: "2027-03-01", ...outstanding }),
-  INFORMATION_ORDER[0],
+const incompleteLater = withMissingFields(
+  makeProduct({ id: "3", name: "Later Lamp", criticalPath: "AW26 PH1", launchDate: "2027-03-01" }),
+  "supplierName",
 );
 const ready = makeProduct({ id: "4", name: "Ready Rack", criticalPath: "SS27 PH1", launchDate: "2027-03-01" });
 const dropped = makeProduct({ id: "5", name: "Dropped Desk", criticalPath: "AW26 PH1", launchDate: "2026-11-12", lifecycle: "Dropped" });
@@ -88,7 +91,7 @@ describe("buildWeeklySummary scope", () => {
 
   it("ignores the status card filter", () => {
     const all = buildWeeklySummary(fixtures, EMPTY_FILTERS);
-    const filtered = buildWeeklySummary(fixtures, { ...EMPTY_FILTERS, readiness: "At Risk" });
+    const filtered = buildWeeklySummary(fixtures, { ...EMPTY_FILTERS, status: "Expectation At Risk" });
     expect(filtered).toEqual(all);
   });
 });
@@ -105,15 +108,21 @@ describe("buildWeeklySummary sections", () => {
 
   it("lists At Risk products with the working days to launch", () => {
     expect(summary.atRisk.map((item) => item.product.id)).toEqual(["1"]);
-    expect(summary.atRisk[0].workingDaysToLaunch).toBe(5);
-    expect(launchGapLabel(summary.atRisk[0])).toBe("5 working days to launch");
+    expect(summary.atRisk[0].workingDaysToLaunch).toBe(8);
+    expect(launchGapLabel(summary.atRisk[0])).toBe("8 working days to launch");
   });
 
   it("lists only incomplete products whose information is due within 10 working days", () => {
     expect(summary.infoNeeded.map((item) => item.product.id)).toEqual(["2"]);
-    expect(summary.infoNeeded[0].neededBy).toBe("2026-11-13");
-    expect(summary.infoNeeded[0].missingCount).toBeGreaterThan(0);
-    expect(deadlineLabel(summary.infoNeeded[0])).toBe("in 3 working days");
+    expect(summary.infoNeeded[0].neededBy).toBe(assessProduct(incompleteSoon).infoNeededBy);
+    expect(summary.infoNeeded[0].missingCount).toBe(1);
+  });
+
+  it("labels the information deadline in working days", () => {
+    const item = summary.infoNeeded[0];
+    expect(deadlineLabel({ ...item, workingDaysToDeadline: 3 })).toBe("in 3 working days");
+    expect(deadlineLabel({ ...item, workingDaysToDeadline: 0 })).toBe("due today");
+    expect(deadlineLabel({ ...item, workingDaysToDeadline: -1 })).toBe("passed 1 working day ago");
   });
 
   it("lists launch date changes made this week with the old and new dates", () => {
@@ -126,10 +135,7 @@ describe("buildWeeklySummary sections", () => {
   });
 
   it("describes a passed deadline", () => {
-    const overdue = withoutInformation(
-      makeProduct({ id: "10", name: "Overdue", launchDate: "2026-11-24", ...outstanding }),
-      INFORMATION_ORDER[0],
-    );
+    const overdue = withMissingFields(makeProduct({ id: "10", name: "Overdue", launchDate: "2026-11-24" }), "supplierName");
     const item = buildWeeklySummary([overdue], EMPTY_FILTERS).infoNeeded[0];
     expect(item.workingDaysToDeadline).toBeLessThan(0);
     expect(deadlineLabel(item)).toMatch(/^passed \d+ working days? ago$/);
@@ -147,18 +153,17 @@ describe("weeklySummaryText", () => {
 });
 
 describe("seed data", () => {
-  it("builds a summary for every critical path without changing any status", () => {
-    const before = INITIAL_PRODUCTS.map((product) => summariseReadiness(product).launchStatus);
-    const paths = [...new Set(INITIAL_PRODUCTS.map((product) => product.criticalPath).filter(Boolean))] as string[];
+  it("builds a summary for every critical path whose counts add up", () => {
+    const paths = [...new Set(SEED_PRODUCTS.map((product) => product.criticalPath).filter(Boolean))] as string[];
     for (const criticalPath of paths) {
-      const summary = buildWeeklySummary(INITIAL_PRODUCTS, { ...EMPTY_FILTERS, criticalPath });
+      const summary = buildWeeklySummary(SEED_PRODUCTS, { ...EMPTY_FILTERS, criticalPath });
       expect(summary.atRiskCount + summary.incompleteCount + summary.onTrackCount).toBe(summary.total);
     }
-    expect(INITIAL_PRODUCTS.map((product) => summariseReadiness(product).launchStatus)).toEqual(before);
   });
 
   it("has something to show in every section across all Active products", () => {
-    const summary = buildWeeklySummary(INITIAL_PRODUCTS, EMPTY_FILTERS);
+    const summary = buildWeeklySummary(SEED_PRODUCTS, EMPTY_FILTERS);
+    expect(summary.atRisk.length).toBeGreaterThan(0);
     expect(summary.dateChanges.length).toBeGreaterThan(0);
     expect(summary.stockAfterLaunch.length).toBeGreaterThan(0);
   });

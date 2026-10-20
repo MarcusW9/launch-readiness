@@ -8,8 +8,20 @@ const sessionFor = (role: Role): Session => ({ user: { ...DEMO_SESSION.user, rol
 
 describe("can", () => {
   const matrix: Record<Role, Record<Permission, boolean>> = {
-    viewer: { "product:view": true, "note:add": true, "activity:update": false, "demo:reset": false },
-    editor: { "product:view": true, "note:add": true, "activity:update": true, "demo:reset": true },
+    downstream: {
+      "product:view": true,
+      "note:add": true,
+      "product:edit": false,
+      "reminder:send": true,
+      "demo:reset": true,
+    },
+    commercial: {
+      "product:view": true,
+      "note:add": true,
+      "product:edit": true,
+      "reminder:send": false,
+      "demo:reset": true,
+    },
   };
 
   for (const role of Object.keys(matrix) as Role[]) {
@@ -22,7 +34,7 @@ describe("can", () => {
   }
 
   it("denies every permission when nobody is signed in", () => {
-    for (const permission of Object.keys(matrix.editor) as Permission[]) {
+    for (const permission of Object.keys(matrix.commercial) as Permission[]) {
       expect(can(null, permission), permission).toBe(false);
     }
   });
@@ -33,8 +45,8 @@ describe("mock auth provider", () => {
     await expect(createMockAuthProvider().getSession()).resolves.toBe(DEMO_SESSION);
   });
 
-  it("describes a fictional editor, never a real person", () => {
-    expect(DEMO_SESSION.user.role).toBe("editor");
+  it("describes a fictional downstream user, never a real person", () => {
+    expect(DEMO_SESSION.user.role).toBe("downstream");
     expect(DEMO_SESSION.user.email).toMatch(/@example\.com$/);
   });
 
@@ -53,11 +65,11 @@ describe("the app's auth bindings", () => {
 
 describe("createAuth", () => {
   it("returns the session from whatever provider it is given", async () => {
-    const viewer = sessionFor("viewer");
-    const auth = createAuth(createMockAuthProvider(viewer));
+    const downstream = sessionFor("downstream");
+    const auth = createAuth(createMockAuthProvider(downstream));
 
-    await expect(auth.getSession()).resolves.toBe(viewer);
-    await expect(auth.requireSession()).resolves.toBe(viewer);
+    await expect(auth.getSession()).resolves.toBe(downstream);
+    await expect(auth.requireSession()).resolves.toBe(downstream);
   });
 
   it("reports a signed-out visitor as null from getSession", async () => {

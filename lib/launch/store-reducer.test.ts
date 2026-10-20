@@ -1,276 +1,114 @@
 import { describe, expect, it } from "vitest";
-import { INFORMATION_DEFINITIONS } from "./information";
 import { createLaunchReducer } from "./store-reducer";
-import { makeProduct, stateAt, withoutInformation } from "./testing/fixtures";
-import type { Product } from "./types";
+import { makeProduct, withMissingFields } from "./testing/fixtures";
 
-const NOW = "2026-10-12T09:30";
+const NOW = "2026-11-10T09:30";
 
-function setup(initial: Product[] = []) {
+function setup(products = [makeProduct({ id: "100" }), makeProduct({ id: "200" })]) {
   let counter = 0;
   const reducer = createLaunchReducer({
     now: () => NOW,
     newId: (prefix) => `${prefix}-${++counter}`,
-    initial,
+    initial: products,
   });
-  return { reducer };
+  return { reducer, products };
 }
-
-function productNotStarted(): Product {
-  return makeProduct({
-    id: "100",
-    activities: { "product-setup": stateAt("not-started") },
-  });
-}
-
-describe("add-note", () => {
-  it("prepends a note authored by the user at the injected time", () => {
-    const { reducer } = setup();
-    const product = productNotStarted();
-    const [next] = reducer([product], { type: "add-note", productId: "100", key: "product-setup", text: "Call supplier" });
-
-    expect(next.activities["product-setup"]?.notes).toEqual([
-      { id: "n-1", at: NOW, author: "You", text: "Call supplier" },
-    ]);
-  });
-
-  it("leaves other products as the same reference", () => {
-    const { reducer } = setup();
-    const target = productNotStarted();
-    const other = makeProduct({ id: "200" });
-    const next = reducer([target, other], { type: "add-note", productId: "100", key: "product-setup", text: "x" });
-
-    expect(next[1]).toBe(other);
-  });
-
-  it("does nothing when the product does not have that activity", () => {
-    const { reducer } = setup();
-    const product = productNotStarted();
-    const [next] = reducer([product], { type: "add-note", productId: "100", key: "variants", text: "x" });
-
-    expect(next).toBe(product);
-  });
-});
-
-describe("set-blocked", () => {
-  it("flags the activity and records the reason in history", () => {
-    const { reducer } = setup();
-    const [next] = reducer([productNotStarted()], {
-      type: "set-blocked",
-      productId: "100",
-      key: "product-setup",
-      reason: "Waiting on legal",
-    });
-    const state = next.activities["product-setup"]!;
-
-    expect(state.blocked).toBe(true);
-    expect(state.blockedReason).toBe("Waiting on legal");
-    expect(state.history[0]).toEqual({ id: "h-1", at: NOW, text: "Flagged as Blocked: Waiting on legal" });
-  });
-
-  it("clears the blocker when the reason is null", () => {
-    const { reducer } = setup();
-    const blocked = makeProduct({
-      id: "100",
-      activities: { "product-setup": stateAt("in-progress", { blocked: true, blockedReason: "Old reason" }) },
-    });
-    const [next] = reducer([blocked], { type: "set-blocked", productId: "100", key: "product-setup", reason: null });
-    const state = next.activities["product-setup"]!;
-
-    expect(state.blocked).toBe(false);
-    expect(state.blockedReason).toBeUndefined();
-    expect(state.history[0].text).toBe("Blocker cleared");
-  });
-});
-
-describe("set-stage", () => {
-  it("moves forward and records the stage label in history", () => {
-    const { reducer } = setup();
-    const [next] = reducer([productNotStarted()], {
-      type: "set-stage",
-      productId: "100",
-      key: "product-setup",
-      stageId: "in-progress",
-    });
-    const state = next.activities["product-setup"]!;
-
-    expect(state.stage).toBe("in-progress");
-    expect(state.history[0]).toEqual({ id: "h-1", at: NOW, text: "Moved to In Progress" });
-  });
-
-  it("ignores a stage id that is not in the workflow", () => {
-    const { reducer } = setup();
-    const products = [productNotStarted()];
-
-    expect(reducer(products, { type: "set-stage", productId: "100", key: "product-setup", stageId: "nonsense" })).toBe(
-      products,
-    );
-  });
-
-  it("refuses to start while start information is missing", () => {
-    const { reducer } = setup();
-    const products = [withoutInformation(productNotStarted(), "supplier")];
-
-    expect(reducer(products, { type: "set-stage", productId: "100", key: "product-setup", stageId: "in-progress" })).toBe(
-      products,
-    );
-  });
-
-  it("refuses to complete while required information is missing", () => {
-    const { reducer } = setup();
-    const inProgress = makeProduct({
-      id: "100",
-      activities: { "product-setup": stateAt("in-progress") },
-    });
-    const products = [withoutInformation(inProgress, "pricing")];
-
-    expect(reducer(products, { type: "set-stage", productId: "100", key: "product-setup", stageId: "complete" })).toBe(
-      products,
-    );
-  });
-
-  it("completes when all required information is present and clears any blocker", () => {
-    const { reducer } = setup();
-    const inProgress = makeProduct({
-      id: "100",
-      activities: { "product-setup": stateAt("in-progress", { blocked: true, blockedReason: "Stale" }) },
-    });
-    const [next] = reducer([inProgress], {
-      type: "set-stage",
-      productId: "100",
-      key: "product-setup",
-      stageId: "complete",
-    });
-    const state = next.activities["product-setup"]!;
-
-    expect(state.stage).toBe("complete");
-    expect(state.blocked).toBe(false);
-    expect(state.blockedReason).toBeUndefined();
-  });
-
-  it("allows moving backwards even when information is missing", () => {
-    const { reducer } = setup();
-    const complete = makeProduct({ id: "100" });
-    const products = [withoutInformation(complete, "pricing")];
-    const [next] = reducer(products, {
-      type: "set-stage",
-      productId: "100",
-      key: "product-setup",
-      stageId: "in-progress",
-    });
-
-    expect(next.activities["product-setup"]?.stage).toBe("in-progress");
-  });
-});
-
-describe("provide-information", () => {
-  const pricingLabel = INFORMATION_DEFINITIONS.pricing.label;
-
-  it("stores the value as team-sourced at the injected time", () => {
-    const { reducer } = setup();
-    const products = [withoutInformation(productNotStarted(), "pricing")];
-    const [next] = reducer(products, { type: "provide-information", productId: "100", infoKey: "pricing", value: "£25" });
-
-    expect(next.information.pricing).toEqual({ value: "£25", source: "team", at: NOW });
-  });
-
-  it("adds a history entry only to activities that require that information", () => {
-    const { reducer } = setup();
-    const products = [withoutInformation(productNotStarted(), "pricing")];
-    const [next] = reducer(products, { type: "provide-information", productId: "100", infoKey: "pricing", value: "£25" });
-
-    expect(next.activities["product-setup"]?.history[0].text).toBe(`${pricingLabel} provided`);
-    expect(next.activities["product-content"]?.history).toEqual([]);
-  });
-
-  it("does not touch other products", () => {
-    const { reducer } = setup();
-    const other = makeProduct({ id: "200" });
-    const next = reducer([withoutInformation(productNotStarted(), "pricing"), other], {
-      type: "provide-information",
-      productId: "100",
-      infoKey: "pricing",
-      value: "£25",
-    });
-
-    expect(next[1]).toBe(other);
-  });
-
-  it("unblocks starting once the last start-blocking item is provided", () => {
-    const { reducer } = setup();
-    const products = [withoutInformation(productNotStarted(), "supplier")];
-    const afterProvide = reducer(products, {
-      type: "provide-information",
-      productId: "100",
-      infoKey: "supplier",
-      value: "Acme Ltd",
-    });
-    const [started] = reducer(afterProvide, {
-      type: "set-stage",
-      productId: "100",
-      key: "product-setup",
-      stageId: "in-progress",
-    });
-
-    expect(started.activities["product-setup"]?.stage).toBe("in-progress");
-  });
-});
 
 describe("add-product-note", () => {
-  const add = (text: string) =>
-    ({ type: "add-product-note", productId: "100", text, author: "Priya Shah", role: "commercial" }) as const;
+  it("adds the note to the top of the product's log with the author, role and time", () => {
+    const { reducer, products } = setup();
 
-  it("puts the new note at the top of the product's log", () => {
-    const { reducer } = setup();
-    const existing = { id: "pn-0", at: "2026-11-02T09:00", author: "Daniel Okafor", role: "downstream", text: "Older" } as const;
-    const [next] = reducer([{ ...productNotStarted(), notes: [existing] }], add("  Newer  "));
+    const first = reducer(products, { type: "add-product-note", productId: "100", text: "First", author: "Sam", role: "commercial" });
+    const second = reducer(first, { type: "add-product-note", productId: "100", text: "Second", author: "Alex", role: "downstream" });
 
-    expect(next.notes).toEqual([
-      { id: "pn-1", at: NOW, author: "Priya Shah", role: "commercial", text: "Newer" },
-      existing,
-    ]);
+    expect(second[0].notes?.map((note) => note.text)).toEqual(["Second", "First"]);
+    expect(second[0].notes?.[1]).toMatchObject({ author: "Sam", role: "commercial", at: NOW });
   });
 
-  it("ignores empty and over-long notes", () => {
-    const { reducer } = setup();
-    const products = [productNotStarted()];
+  it("trims the text and ignores an empty note", () => {
+    const { reducer, products } = setup();
 
-    expect(reducer(products, add("   "))).toBe(products);
-    expect(reducer(products, add("a".repeat(501)))).toBe(products);
+    const trimmed = reducer(products, { type: "add-product-note", productId: "100", text: "  Hello  ", author: "Sam", role: "commercial" });
+    const empty = reducer(products, { type: "add-product-note", productId: "100", text: "   ", author: "Sam", role: "commercial" });
+
+    expect(trimmed[0].notes?.[0].text).toBe("Hello");
+    expect(empty).toBe(products);
   });
 
-  it("leaves other products as the same reference and changes nothing else on the product", () => {
-    const { reducer } = setup();
-    const target = productNotStarted();
-    const other = makeProduct({ id: "200" });
-    const [next, untouched] = reducer([target, other], add("Hello"));
+  it("gives every note its own ID and leaves other products alone", () => {
+    const { reducer, products } = setup();
 
-    expect(untouched).toBe(other);
-    expect({ ...next, notes: undefined }).toEqual({ ...target, notes: undefined });
+    const a = reducer(products, { type: "add-product-note", productId: "100", text: "A", author: "Sam", role: "commercial" });
+    const b = reducer(a, { type: "add-product-note", productId: "100", text: "B", author: "Sam", role: "commercial" });
+
+    expect(new Set(b[0].notes?.map((note) => note.id)).size).toBe(2);
+    expect(b[1]).toBe(products[1]);
+  });
+});
+
+describe("edit-field", () => {
+  it("writes the value to the product", () => {
+    const { reducer, products } = setup();
+
+    const next = reducer(products, { type: "edit-field", productId: "100", key: "title", value: "  Renamed  " });
+
+    expect(next[0].name).toBe("Renamed");
+    expect(next[1]).toBe(products[1]);
+  });
+
+  it("starts the SLA on the demo date when an edit completes the last missing field", () => {
+    const incomplete = withMissingFields(makeProduct({ id: "100" }), "supplierName");
+    const { reducer, products } = setup([incomplete]);
+
+    const next = reducer(products, { type: "edit-field", productId: "100", key: "supplierName", value: "Fictional Manufacturing Co." });
+
+    expect(next[0].infoCompleteAt).toBe("2026-11-10");
+  });
+
+  it("does not start the SLA while the product is still incomplete", () => {
+    const incomplete = withMissingFields(makeProduct({ id: "100" }), "supplierName", "supplierContact");
+    const { reducer, products } = setup([incomplete]);
+
+    const next = reducer(products, { type: "edit-field", productId: "100", key: "supplierName", value: "Fictional Manufacturing Co." });
+
+    expect(next[0].infoCompleteAt).toBeUndefined();
+  });
+
+  it("never changes the catalogue number", () => {
+    const { reducer, products } = setup();
+
+    const next = reducer(products, { type: "edit-field", productId: "100", key: "catNo", value: "999" });
+
+    expect(next[0]).toBe(products[0]);
+  });
+});
+
+describe("change-launch-date", () => {
+  it("moves the date and records the previous one and when it changed", () => {
+    const { reducer, products } = setup();
+
+    const next = reducer(products, { type: "change-launch-date", productId: "100", date: "2027-01-15" });
+
+    expect(next[0]).toMatchObject({
+      launchDate: "2027-01-15",
+      previousLaunchDate: "2026-12-30",
+      launchDateChangedOn: "2026-11-10",
+    });
+  });
+
+  it("ignores a date that is the same or not a date", () => {
+    const { reducer, products } = setup();
+
+    expect(reducer(products, { type: "change-launch-date", productId: "100", date: "2026-12-30" })[0]).toBe(products[0]);
+    expect(reducer(products, { type: "change-launch-date", productId: "100", date: "soon" })[0]).toBe(products[0]);
   });
 });
 
 describe("reset", () => {
-  it("returns the initial data it was created with", () => {
-    const initial = [makeProduct({ id: "seed" })];
-    const { reducer } = setup(initial);
-    const changed = reducer([productNotStarted()], { type: "reset" });
+  it("restores the starting products", () => {
+    const { reducer, products } = setup();
+    const changed = reducer(products, { type: "edit-field", productId: "100", key: "title", value: "Renamed" });
 
-    expect(changed).toBe(initial);
-  });
-});
-
-describe("purity", () => {
-  it("never mutates the state it receives", () => {
-    const { reducer } = setup();
-    const product = productNotStarted();
-    const snapshot = JSON.stringify(product);
-
-    reducer([product], { type: "add-note", productId: "100", key: "product-setup", text: "x" });
-    reducer([product], { type: "set-blocked", productId: "100", key: "product-setup", reason: "r" });
-    reducer([product], { type: "set-stage", productId: "100", key: "product-setup", stageId: "in-progress" });
-    reducer([product], { type: "provide-information", productId: "100", infoKey: "pricing", value: "v" });
-
-    expect(JSON.stringify(product)).toBe(snapshot);
+    expect(reducer(changed, { type: "reset" })).toBe(products);
   });
 });

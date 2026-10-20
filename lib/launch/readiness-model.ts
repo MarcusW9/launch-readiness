@@ -1,6 +1,6 @@
 import { assessCompleteness, type Completeness } from "./completeness";
 import { DATE_CHANGED_WITHIN_DAYS } from "./readiness-config";
-import { DEMO_TODAY, daysUntil } from "./readiness";
+import { DEMO_TODAY, daysUntil, formatLongDate } from "./readiness";
 import { infoCompleteAt, slaProjectionDate, slaWorkingDays } from "./sla";
 import type { Product, ProductLifecycle } from "./types";
 import { addWorkingDays, pluralise, workingDaysBetween } from "./working-days";
@@ -129,4 +129,80 @@ export function compareAssessments(a: ModelAssessment, b: ModelAssessment): numb
 
 export function assessAndSort(products: Product[], today: string = DEMO_TODAY): ModelAssessment[] {
   return products.map((product) => assessProduct(product, today)).sort(compareAssessments);
+}
+
+/**
+ * One plain sentence saying why a product has the status it has. Shown at the top of the product page.
+ */
+export function explainStatus(assessment: ModelAssessment): string {
+  const { product, completeness } = assessment;
+  const launch = formatLongDate(product.launchDate);
+  if (product.lifecycle) {
+    return `This product is ${product.lifecycle}, so no launch preparation is being tracked.`;
+  }
+  if (assessment.status === "Information Incomplete") {
+    const missing = completeness.missingMandatory.map((field) => field.definition.label);
+    const list = missing.length > 3 ? `${missing.slice(0, 3).join(", ")} and ${missing.length - 3} more` : missing.join(", ");
+    const needed = assessment.infoNeededBy
+      ? assessment.infoNeededByPassed
+        ? ` It was needed by ${formatLongDate(assessment.infoNeededBy)} to launch on ${launch}, so that date has passed.`
+        : ` It is needed by ${formatLongDate(assessment.infoNeededBy)} to launch on ${launch}.`
+      : "";
+    return `${pluralise(missing.length, "mandatory field")} still missing (${list}), so the SLA has not started.${needed}`;
+  }
+  const projection = assessment.slaProjectionDate ? formatLongDate(assessment.slaProjectionDate) : "";
+  if (assessment.status === "Expectation At Risk") {
+    return `All mandatory information is in, but the SLA projection of ${projection} is ${pluralise(assessment.gapWorkingDays, "working day")} after the proposed launch of ${launch}.`;
+  }
+  return `All mandatory information is in and the SLA projection of ${projection} is on or before the proposed launch of ${launch}.`;
+}
+
+export type TimelineTone = "done" | "pending" | "late" | "neutral";
+
+export interface TimelineEvent {
+  key: "pim" | "info-complete" | "sla-projection" | "launch" | "stock";
+  label: string;
+  /** ISO date, or undefined when the event has not happened or is not known. */
+  date?: string;
+  /** Shown instead of a date when there is none, e.g. "Not started". */
+  placeholder: string;
+  tone: TimelineTone;
+}
+
+/** The product journey in order: PIM, information complete (SLA starts), SLA projection, launch, stock ready. */
+export function buildTimeline(assessment: ModelAssessment): TimelineEvent[] {
+  const { product } = assessment;
+  const complete = assessment.completeness.isComplete;
+  const atRisk = assessment.status === "Expectation At Risk";
+  return [
+    {
+      key: "pim",
+      label: "Entered in PIM",
+      date: product.pimDate,
+      placeholder: "Not entered",
+      tone: product.pimDate ? "done" : "pending",
+    },
+    {
+      key: "info-complete",
+      label: "Information complete (SLA starts)",
+      date: assessment.infoCompleteAt,
+      placeholder: complete ? "Date not recorded" : "Not started",
+      tone: assessment.infoCompleteAt ? "done" : "pending",
+    },
+    {
+      key: "sla-projection",
+      label: "SLA projection",
+      date: assessment.slaProjectionDate,
+      placeholder: "Not started",
+      tone: assessment.slaProjectionDate ? (atRisk ? "late" : "done") : "pending",
+    },
+    { key: "launch", label: "Proposed launch", date: product.launchDate, placeholder: "Not set", tone: "neutral" },
+    {
+      key: "stock",
+      label: "Stock ready",
+      date: product.stockLandsDate,
+      placeholder: "Not known",
+      tone: product.stockLandsDate ? (assessment.flags.stockAfterLaunch ? "late" : "done") : "pending",
+    },
+  ];
 }
