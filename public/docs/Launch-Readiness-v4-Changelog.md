@@ -135,6 +135,15 @@ The main screen stays simple. Extra columns do not go back onto the Products tab
 7. `*.tsbuildinfo` was added to `.gitignore`.
 8. Tests: type-check is clean and all 594 tests pass across 38 files. No product status or date changed.
 
+## Fix 4c: Single source of truth for the readiness model
+
+1. New `lib/launch/readiness-config.ts` is now the single source of truth for the readiness model: the 31 information fields and which 13 are mandatory, the values that count as a data error (`#N/A`, `#REF!`) or not applicable (`N/A`), and the SLA settings (20 working days by default, 25 for a Guest bed).
+2. New pure modules read from that config: `lib/launch/working-days.ts` (weekday arithmetic), `lib/launch/completeness.ts` (which mandatory fields are missing), `lib/launch/sla.ts` (the completion and projection dates) and `lib/launch/readiness-model.ts` (status, flags and sort, replacing the scattered logic this change log previously described across `readiness.ts` and `information.ts`).
+3. A new seed product, the Oakline Fold-Away Guest Bed (`1912345`, Furniture), has every activity done and every mandatory field present, so it is Ready and uses the 25 working day SLA. It has its own Studio brief and information answers; no other product's status, date or flag changed.
+4. One existing date moved by a day: the Hearthwell 3-Seater Garden Sofa Set's launch date (`1467890`) changed from a Saturday to the nearest working day so the launch countdown lines up with the working-day rules. Its status and flags are otherwise unchanged.
+5. New files: `lib/launch/readiness-config.ts`, `working-days.ts`, `completeness.ts`, `sla.ts`, `readiness-model.ts`, and their test files. `readiness.ts` and `information.ts` are unchanged and still used by the UI; the new modules do not yet replace them there.
+6. Tests: type-check is clean and all 672 tests pass across 42 files, including a check that the seed data covers every readiness status and flag at least once.
+
 ## Roadmap: later, not part of version 4
 
 - Job ID, as an optional field entered by the studio when a product is ready to brief.
@@ -161,7 +170,7 @@ The main screen stays simple. Extra columns do not go back onto the Products tab
 
 ## Quality
 
-- 594 automated tests across 38 files, all passing. The weekly summary adds 22: `weekly-summary.test.ts` 16 and `weekly-summary-dialog.test.tsx` 6. The Studio view adds 35: `studio.test.ts` 18 and `studio-view.test.tsx` 17. The Products view test grew from 10 to 25 tests for the filter bar, tabs and critical path summary, a new `critical-path.test.ts` adds 11, and the notes log adds 28 (`product-notes.test.ts` 6, `seed-notes.test.ts` 6, `product-notes.test.tsx` 11, plus 3 in the store reducer tests and 2 in the auth tests).
+- 672 automated tests across 42 files, all passing. The weekly summary adds 22: `weekly-summary.test.ts` 16 and `weekly-summary-dialog.test.tsx` 6. The Studio view adds 35: `studio.test.ts` 18 and `studio-view.test.tsx` 17. The Products view test grew from 10 to 25 tests for the filter bar, tabs and critical path summary, a new `critical-path.test.ts` adds 11, and the notes log adds 28 (`product-notes.test.ts` 6, `seed-notes.test.ts` 6, `product-notes.test.tsx` 11, plus 3 in the store reducer tests and 2 in the auth tests). The readiness model adds 77 across four new files: `working-days.test.ts` 13, `completeness.test.ts` 20, `sla.test.ts` 9 and `readiness-model.test.ts` 35.
 - Browser tests (Playwright, run with `pnpm test:e2e`): 8 specs, 16 runs across a desktop and a mobile viewport.
 - About 99 percent statement coverage of the business rules and auth (`lib/**`).
 

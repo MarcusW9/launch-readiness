@@ -51,7 +51,7 @@ Product -> Requirements -> Information -> Work state -> Action -> Ready
 - Documentation checks: a test compares this README, the How it works guide and the change logs with the real project.
 - Wording fix: Overview now says "1 product needs your attention" for a single product.
 - Change log history: the How it works page leads with the latest change log, and earlier versions are collapsed into an expandable history, each still downloadable.
-- 594 automated tests across 38 test files, plus 8 browser tests (run on desktop and mobile) covering navigation, providing information and the activity workflow.
+- 672 automated tests across 42 test files, plus 8 browser tests (run on desktop and mobile) covering navigation, providing information and the activity workflow.
 
 ### Delivered in v3
 
@@ -62,7 +62,7 @@ Product -> Requirements -> Information -> Work state -> Action -> Ready
 - Asynchronous product repository as the single data seam.
 - Session and permissions architecture with a built-in demo user. There is deliberately no sign-in screen.
 - A full How it works guide with eight screenshots and a downloadable Markdown change log.
-- 191 automated tests across 10 test files at release (now 594 across 38, see above).
+- 191 automated tests across 10 test files at release (now 672 across 42, see above).
 
 ### Behaviour worth knowing
 
@@ -114,11 +114,15 @@ pnpm dev        # http://localhost:3000
 
 ## Tests
 
-**594 tests across 38 test files, all passing, in a few seconds.** Business rules are tested as plain functions; components are tested the way a person uses them (by role, label and visible text) with Testing Library in jsdom.
+**672 tests across 42 test files, all passing, in a few seconds.** Business rules are tested as plain functions; components are tested the way a person uses them (by role, label and visible text) with Testing Library in jsdom.
 
 | File | Tests | Protects |
 | --- | ---: | --- |
 | `lib/launch/readiness.test.ts` | 31 | Ready, Action Required and At Risk, the 10-day rule, lifecycle products and the needs-attention count. |
+| `lib/launch/working-days.test.ts` | 13 | Working day arithmetic: weekends skipped forwards and backwards, 20 and 25 day spans, the gap between two dates, and singular and plural wording. |
+| `lib/launch/completeness.test.ts` | 20 | The 31 information fields and 13 mandatory ones: what counts as missing, N/A only in optional fields, data errors shown once, and optional fields never blocking completeness. |
+| `lib/launch/sla.test.ts` | 9 | The placeholder SLA: 20 working days by default, 25 for a Guest bed, the completion date and the projection date. |
+| `lib/launch/readiness-model.test.ts` | 35 | The three readiness statuses, info needed by and passed deadlines, launch in working days, the three flags, the default sort, and that the seed data covers every case. |
 | `lib/launch/activities.test.ts` | 31 | Which activities apply to which product, the reason shown, work states and workflow stages. |
 | `lib/launch/filters.test.ts` | 26 | Search, category, status, launch window, outstanding work and information filters, alone and combined. |
 | `lib/launch/critical-path.test.ts` | 11 | The critical path summary: when one path counts as selected (filter or search), its active lines, own status and flagged counts, and the main and other launch dates. |
@@ -129,7 +133,7 @@ pnpm dev        # http://localhost:3000
 | `lib/launch/store-reducer.test.ts` | 20 | Providing information, moving work, blocking and clearing, notes, history and reset, and the permanent product notes log (newest first, trimmed, empty notes ignored, restored by reset). |
 | `lib/launch/store.test.tsx` | 12 | The in-memory store as components use it: each action reaches the right product, reset restores the demo data, and using it outside the provider fails loudly. |
 | `lib/launch/launch-journey.integration.test.ts` | 13 | Whole journeys: providing information unlocks work, advancing work completes a product, and the calendar. |
-| `lib/launch/seed-scenarios.integration.test.ts` | 38 | Every demo product resolves correctly and every view agrees with every other view. |
+| `lib/launch/seed-scenarios.integration.test.ts` | 39 | Every demo product resolves correctly and every view agrees with every other view. |
 | `lib/launch/studio.test.ts` | 18 | The Studio view rules: Active products only, search and filters, Not provided and data errors, grouping by style, the CSV contents and file name, and that studio details never change a status. |
 | `lib/launch/weekly-summary.test.ts` | 16 | The weekly summary rules: working days, scope (critical path filter or matching search, status card ignored), the headline counts, At Risk and information-needed lists, date changes, stock after launch, the plain-text version, and that no status changes. |
 | `lib/launch/product-notes.test.ts` | 6 | The note rules: the 500-character limit, empty notes refused, role labels, simulated authors and newest-first order. |

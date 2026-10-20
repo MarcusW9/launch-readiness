@@ -68,6 +68,26 @@ export const TEST_FILES = [
     protects: "Ready, Action Required and At Risk, the 10-day rule, lifecycle products and the needs-attention count.",
   },
   {
+    file: "lib/launch/working-days.test.ts",
+    tests: 13,
+    protects: "Working day arithmetic: weekends skipped forwards and backwards, 20 and 25 day spans, the gap between two dates, and singular and plural wording.",
+  },
+  {
+    file: "lib/launch/completeness.test.ts",
+    tests: 20,
+    protects: "The 31 information fields and 13 mandatory ones: what counts as missing, N/A only in optional fields, data errors shown once, and optional fields never blocking completeness.",
+  },
+  {
+    file: "lib/launch/sla.test.ts",
+    tests: 9,
+    protects: "The placeholder SLA: 20 working days by default, 25 for a Guest bed, the completion date and the projection date.",
+  },
+  {
+    file: "lib/launch/readiness-model.test.ts",
+    tests: 35,
+    protects: "The three readiness statuses, info needed by and passed deadlines, launch in working days, the three flags, the default sort, and that the seed data covers every case.",
+  },
+  {
     file: "lib/launch/activities.test.ts",
     tests: 31,
     protects: "Which activities apply to which product, the reason shown, work states and workflow stages.",
@@ -114,7 +134,7 @@ export const TEST_FILES = [
   },
   {
     file: "lib/launch/seed-scenarios.integration.test.ts",
-    tests: 38,
+    tests: 39,
     protects: "Every demo product resolves correctly and every view agrees with every other view.",
   },
   {
@@ -255,7 +275,7 @@ export const TEST_FILES = [
 ] as const;
 
 export const TEST_TOTALS = {
-  tests: 594,
-  files: 38,
+  tests: 672,
+  files: 42,
   coverage: 99,
 } as const;

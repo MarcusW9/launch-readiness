@@ -1,4 +1,5 @@
 import { INFORMATION_DEFINITIONS, INFORMATION_ORDER } from "./information";
+import type { FieldKey } from "./readiness-config";
 import type {
   ActivityState,
   HistoryEntry,
@@ -400,7 +401,7 @@ const RAW_PRODUCTS: RawProduct[] = [
     name: "Hearthwell 3-Seater Garden Sofa Set",
     brand: "Hearthwell",
     category: "Garden furniture",
-    launchDate: "2026-12-12",
+    launchDate: "2026-12-11",
     characteristics: {
       imagerySource: "studio",
       hasVariants: true,
@@ -441,6 +442,23 @@ const RAW_PRODUCTS: RawProduct[] = [
       "supplier-imagery": done("2026-11-05T12:00"),
       "product-content": done("2026-11-07T11:00"),
       compliance: done("2026-11-09T10:15"),
+    },
+  },
+  {
+    id: "1912345",
+    name: "Oakline Fold-Away Guest Bed",
+    brand: "Oakline",
+    category: "Furniture",
+    launchDate: "2026-12-04",
+    characteristics: { imagerySource: "studio", hasVariants: false, ownBrand: true },
+    studioBrief: {
+      requiredImagery: ["Hero shot", "Spare room lifestyle", "Folded away shot"],
+      styling: "Calm spare room, white linen, natural light.",
+    },
+    activities: {
+      "product-setup": done("2026-11-03T10:00"),
+      "studio-imagery": done("2026-11-06T15:30"),
+      "product-content": done("2026-11-09T10:00"),
     },
   },
   {
@@ -548,6 +566,7 @@ const PLANNING: Record<string, Pick<Product, "range" | "criticalPath">> = {
   "1689012": { range: "Storage", criticalPath: "SS26 PH3" },
   "1790123": { range: "Living room", criticalPath: "SS26 PH3" },
   "1801234": { range: "Outdoor living" },
+  "1912345": { range: "Bedroom", criticalPath: "AW26 PH3" },
 };
 
 /**
@@ -625,6 +644,12 @@ const STUDIO_DETAILS: Record<string, StudioDetails> = {
     components: "Sofa, 2 armchairs, coffee table and cushions",
   },
   "1578901": { imageSource: "Supplier", cutOutSource: "#REF!" },
+  "1912345": {
+    customerStylePreference: "Scandi",
+    imageSource: "Studio shoot",
+    cutOutSource: "Studio shoot",
+    lifestyleSource: "Studio shoot",
+  },
 };
 
 const COMMERCIAL = { author: "Priya Shah", role: "commercial" } as const;
@@ -699,11 +724,98 @@ const WEEKLY_CHANGES: Record<string, Pick<Product, "previousLaunchDate" | "launc
   "1356789": { stockLandsDate: "2026-12-01" },
 };
 
+/** Product Type for each demo product. It also picks the SLA: Guest bed is 25 working days, everything else 20. */
+const PRODUCT_TYPES: Record<string, string> = {
+  "1234567": "Sofa",
+  "2345678": "Television",
+  "3456789": "Duvet set",
+  "4567890": "Dinner set",
+  "5678901": "Play kitchen",
+  "6789012": "Washing machine",
+  "7890123": "Bed linen",
+  "8901234": "Air fryer",
+  "9012345": "Cushion set",
+  "1023456": "Electric toothbrush",
+  "1134567": "Dining table",
+  "1245678": "Fairy lights",
+  "1356789": "Coffee machine",
+  "1467890": "Garden sofa set",
+  "1578901": "Remote control toy",
+  "1689012": "Storage set",
+  "1790123": "Armchair",
+  "1801234": "Water table",
+  "1912345": "Guest bed",
+};
+
+/**
+ * Deliberate gaps in the mandatory fields. "" is blank, "N/A" is missing in a mandatory field,
+ * and "#N/A" or "#REF!" are data errors. Products not listed here have every mandatory field.
+ */
+const FIELD_GAPS: Record<string, Partial<Record<FieldKey, string>>> = {
+  "5678901": { supplierContact: "", integration: "N/A" },
+  "1134567": { productFeatures: "#N/A", supplierContact: "", channelB: "" },
+  "1467890": { supplierName: "#REF!", integration: "" },
+  "1801234": { productFeatures: "" },
+};
+
+/** Optional fields that hold a value worth showing. "N/A" in an optional field is a valid answer. */
+const OPTIONAL_FIELDS: Record<string, Partial<Record<FieldKey, string>>> = {
+  "2345678": { subRange: "N/A", dimensions: "1230 x 710 x 60 mm" },
+  "1234567": { dimensions: "2200 x 950 x 850 mm", careAndUse: "Spot clean only" },
+  "3456789": { careAndUse: "Machine wash at 40 degrees" },
+};
+
+/**
+ * The date the last mandatory field was completed, which starts the SLA. Only products whose
+ * mandatory fields are all present have one. Every date is a weekday on or before the demo date.
+ */
+const INFO_COMPLETE_AT: Record<string, string> = {
+  "1234567": "2026-11-03",
+  "2345678": "2026-10-13",
+  "3456789": "2026-10-20",
+  "4567890": "2026-10-26",
+  "6789012": "2026-10-22",
+  "7890123": "2026-10-27",
+  "8901234": "2026-10-14",
+  "9012345": "2026-10-29",
+  "1023456": "2026-10-15",
+  "1245678": "2026-10-06",
+  "1356789": "2026-10-19",
+  "1578901": "2026-10-12",
+  "1689012": "2026-09-14",
+  "1790123": "2026-08-17",
+  "1912345": "2026-11-02",
+};
+
+function seedFields(product: RawProduct): Product["fields"] {
+  const planning = PLANNING[product.id];
+  const season = planning?.criticalPath?.split(" ")[0];
+  const gaps = FIELD_GAPS[product.id] ?? {};
+  return {
+    productType: PRODUCT_TYPES[product.id],
+    channelA: "Y",
+    channelB: product.characteristics.ownBrand ? "Y" : "N",
+    productFeatures: "Key features agreed",
+    department: product.category,
+    season,
+    barcode: `50${product.id}0000`,
+    supplierName: product.characteristics.ownBrand ? "Fictional Manufacturing Co." : `${product.brand} (supplier)`,
+    supplierContact: "Supplier account contact on file",
+    integration: product.characteristics.hasVariants ? "Y" : "N",
+    variantType: product.characteristics.hasVariants ? "Size and colour" : undefined,
+    variantCount: product.variantCount ? String(product.variantCount) : undefined,
+    ...OPTIONAL_FIELDS[product.id],
+    ...gaps,
+  };
+}
+
 export const SEED_PRODUCTS: Product[] = RAW_PRODUCTS.map((product) => ({
   ...product,
   ...PLANNING[product.id],
   ...WEEKLY_CHANGES[product.id],
   studio: STUDIO_DETAILS[product.id],
+  fields: seedFields(product),
+  infoCompleteAt: INFO_COMPLETE_AT[product.id],
   information: seedInformation(product),
   notes: seedNotes(product.id),
 }));
