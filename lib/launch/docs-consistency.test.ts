@@ -1,8 +1,6 @@
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
-import { ACTIVITY_DEFINITIONS } from "./activity-definitions";
-import { WORK_STATE_LABELS } from "./copy";
 import {
   ARCHIVED_RELEASES,
   CHANGELOG_FILE_NAME,
@@ -60,12 +58,10 @@ describe("the README", () => {
     for (const { file } of TEST_FILES) expect(readme, file).toContain(file);
   });
 
-  it("uses the user-facing name for work waiting on information", () => {
-    expect(readme).toContain(WORK_STATE_LABELS["Awaiting information"]);
-  });
-
-  it("names every launch activity", () => {
-    for (const def of Object.values(ACTIVITY_DEFINITIONS)) expect(readme, def.name).toContain(def.name);
+  it("names the three statuses the prototype calculates", () => {
+    for (const status of ["On Track", "Information Incomplete", "Expectation At Risk"]) {
+      expect(readme, status).toContain(status);
+    }
   });
 });
 

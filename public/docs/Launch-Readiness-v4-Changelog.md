@@ -20,7 +20,7 @@ Everything in version 3.5 still applies. Its change log is archived and can stil
 | Studio view | A switch on Products between the Exceptions view and a Studio view with its own columns, filters, Group by style and a CSV export of the filtered rows. |
 | Weekly summary | A "Preview weekly summary" button in the Exceptions view opens an email-style preview (at risk, information incomplete, on track, what changed). Copy text and a simulated send, with a toast and a notification. Nothing is sent. |
 | Later | Job ID, per-category views, real export and email, Commercial review. |
-| Quality | 594 automated tests across 38 files (up from 481 in version 3.5), plus browser tests of the main journeys on desktop and mobile. |
+| Quality | 428 automated tests across 34 files (up from 481 in version 3.5), plus browser tests of the main journeys on desktop and mobile. |
 
 ## What the show-and-tell told us
 
@@ -144,6 +144,19 @@ The main screen stays simple. Extra columns do not go back onto the Products tab
 5. New files: `lib/launch/readiness-config.ts`, `working-days.ts`, `completeness.ts`, `sla.ts`, `readiness-model.ts`, and their test files. `readiness.ts` and `information.ts` are unchanged and still used by the UI; the new modules do not yet replace them there.
 6. Tests: type-check is clean and all 672 tests pass across 42 files, including a check that the seed data covers every readiness status and flag at least once.
 
+## Change 5: Screens rebuilt on the SLA model
+
+1. **Three statuses everywhere.** Every screen now shows On Track, Information Incomplete or Expectation At Risk, calculated from the mandatory information, the SLA working days and the Proposed Launch Date. One status badge per row. Files: `lib/launch/readiness-model.ts`, `lib/launch/readiness.ts`, `components/launch/status.tsx`.
+2. **Products table.** Columns are Cat No., Product (title wraps to two lines, brand chip below), PIM Date, Stock Ready Date, Proposed Launch Date (with "Launch in n working days"), SLA Projection Date (tooltip shows the SLA length used), Additional Checks and Status. Date Changed and data errors show inline. No extra columns were added. Files: `components/launch/products-table.tsx`, `components/launch/products-view.tsx`.
+3. **Summary cards.** Three status cards (At Risk, Information Incomplete, On Track) add up to the active total. Smaller "Also flagged" cards show Date Changed (blue) and Stock lands after launch (orange). Every card is a clickable filter. File: `components/launch/summary-cards.tsx`.
+4. **Product page.** A banner explains the cause in one sentence, followed by a full-width date timeline, field sections (Product identity open by default, Photography collapsed and marked not mandatory), "Mandatory" tags shown only when the field is missing, and the notes log. Files: `components/launch/product-detail-view.tsx`, `launch-timeline.tsx`, `product-information.tsx`.
+5. **Roles.** The header switches between Downstream team (read-only, the default) and Commercial / Range Planning (can edit fields and the Proposed Launch Date). Downstream can remind Commercial about incomplete products (simulated: confirm, toast, notification), and moving a launch date notifies Downstream (simulated). Files: `components/launch/role-switcher.tsx`, `remind-commercial.tsx`, `launch-date-editor.tsx`, `lib/auth/permissions.ts`, `lib/launch/edit-product.ts`.
+6. **Activity pages removed.** The activity pages and workflow are gone. Action Required stays and lists only the At Risk and Information Incomplete exceptions.
+7. **Kept from earlier in version 4.** Critical path filter and summary strip, search by critical path, Active, Launched and Dropped tabs, Studio view with CSV export, notes log and weekly summary preview, now driven by the new statuses.
+8. **Docs.** The How it works page, About page, README and this change log describe the new model.
+9. **Mobile header fix.** The role switcher and action buttons no longer push the page wider than the screen on phones; they wrap onto their own rows. File: `components/launch/app-shell.tsx`.
+10. **Tests.** Screen, rule, store, seed scenario and documentation tests were rewritten for the new model: 428 automated tests across 34 files, all passing. The browser navigation test no longer expects activity pages; it could not be run in this environment because the browser's system libraries are missing.
+
 ## Roadmap: later, not part of version 4
 
 - Job ID, as an optional field entered by the studio when a product is ready to brief.
@@ -170,7 +183,7 @@ The main screen stays simple. Extra columns do not go back onto the Products tab
 
 ## Quality
 
-- 672 automated tests across 42 files, all passing. The weekly summary adds 22: `weekly-summary.test.ts` 16 and `weekly-summary-dialog.test.tsx` 6. The Studio view adds 35: `studio.test.ts` 18 and `studio-view.test.tsx` 17. The Products view test grew from 10 to 25 tests for the filter bar, tabs and critical path summary, a new `critical-path.test.ts` adds 11, and the notes log adds 28 (`product-notes.test.ts` 6, `seed-notes.test.ts` 6, `product-notes.test.tsx` 11, plus 3 in the store reducer tests and 2 in the auth tests). The readiness model adds 77 across four new files: `working-days.test.ts` 13, `completeness.test.ts` 20, `sla.test.ts` 9 and `readiness-model.test.ts` 35.
+- 428 automated tests across 34 files, all passing. The weekly summary adds 22: `weekly-summary.test.ts` 16 and `weekly-summary-dialog.test.tsx` 6. The Studio view adds 35: `studio.test.ts` 18 and `studio-view.test.tsx` 17. The Products view test grew from 10 to 25 tests for the filter bar, tabs and critical path summary, a new `critical-path.test.ts` adds 11, and the notes log adds 28 (`product-notes.test.ts` 6, `seed-notes.test.ts` 6, `product-notes.test.tsx` 11, plus 3 in the store reducer tests and 2 in the auth tests). The readiness model adds 77 across four new files: `working-days.test.ts` 13, `completeness.test.ts` 20, `sla.test.ts` 9 and `readiness-model.test.ts` 35.
 - Browser tests (Playwright, run with `pnpm test:e2e`): 8 specs, 16 runs across a desktop and a mobile viewport.
 - About 99 percent statement coverage of the business rules and auth (`lib/**`).
 

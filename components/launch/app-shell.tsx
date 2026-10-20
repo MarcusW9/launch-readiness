@@ -90,7 +90,7 @@ function Chrome({ children }: { children: ReactNode }) {
               How it works
             </NavLink>
           </nav>
-          <div className="ml-auto flex items-center gap-2">
+          <div className="flex w-full flex-wrap items-center gap-2 md:ml-auto md:w-auto">
             <RemindCommercial />
             <RoleSwitcher />
             <NotificationsMenu />
