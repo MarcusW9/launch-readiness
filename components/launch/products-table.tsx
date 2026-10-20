@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatShortDate } from "@/lib/launch/readiness";
 import { assessProduct, describeLaunchIn } from "@/lib/launch/readiness-model";
-import { NOT_ASSIGNED } from "@/lib/launch/filters";
 import { describeSla, slaProjectionDate } from "@/lib/launch/sla";
 import type { Product } from "@/lib/launch/types";
 import { InfoTip } from "./info-tip";
@@ -79,7 +78,7 @@ export function ProductsTable({ products, caption }: { products: Product[]; capt
                   {product.stockLandsDate ? (
                     formatShortDate(product.stockLandsDate)
                   ) : (
-                    <span className="text-xs text-muted-foreground">{NOT_ASSIGNED}</span>
+                    <span className="text-xs text-muted-foreground">Not known</span>
                   )}
                 </TableCell>
                 <TableCell className="align-middle">

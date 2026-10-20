@@ -439,13 +439,33 @@ const seedNotes = (productId: string): ProductNote[] =>
  * Seed details for the weekly summary's "Changed this week" section. They are display-only:
  * launchDate itself is untouched, so no status, date or calculation depends on them.
  */
-const WEEKLY_CHANGES: Record<string, Pick<Product, "previousLaunchDate" | "launchDateChangedOn" | "stockLandsDate">> = {
+const WEEKLY_CHANGES: Record<string, Pick<Product, "previousLaunchDate" | "launchDateChangedOn">> = {
   "1234567": { previousLaunchDate: "2026-11-17", launchDateChangedOn: "2026-11-09" },
   "4567890": { previousLaunchDate: "2026-11-23", launchDateChangedOn: "2026-11-10" },
-  "1134567": { previousLaunchDate: "2026-11-25", launchDateChangedOn: "2026-11-10", stockLandsDate: "2026-12-08" },
-  "5678901": { stockLandsDate: "2026-11-23" },
-  "1356789": { stockLandsDate: "2026-12-01" },
+  "1134567": { previousLaunchDate: "2026-11-25", launchDateChangedOn: "2026-11-10" },
 };
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** The calendar date `days` before an ISO date, so a Tuesday launch gives the Tuesday a week earlier. */
+function calendarDaysBefore(isoDate: string, days: number): string {
+  return new Date(Date.parse(`${isoDate}T00:00:00Z`) - days * DAY_MS).toISOString().slice(0, 10);
+}
+
+/**
+ * Seeded to land after the Proposed Launch Date, so the "Stock lands after launch" flag shows.
+ * Every other product gets a Stock Ready Date 7 calendar days before its launch. The date feeds the
+ * flag and the timeline only; it never changes an SLA or a status. 1912345 is also At Risk.
+ */
+const STOCK_AFTER_LAUNCH: Record<string, string> = {
+  "5678901": "2026-11-23",
+  "1134567": "2026-12-08",
+  "1356789": "2026-12-01",
+  "1912345": "2026-12-11",
+};
+
+const stockReadyDate = (product: RawProduct): string =>
+  STOCK_AFTER_LAUNCH[product.id] ?? calendarDaysBefore(product.launchDate, 7);
 
 /** Product Type for each demo product. It also picks the SLA: Guest bed is 25 working days, everything else 20. */
 const PRODUCT_TYPES: Record<string, string> = {
@@ -559,6 +579,7 @@ export const SEED_PRODUCTS: Product[] = RAW_PRODUCTS.map((product) => ({
   ...product,
   ...PLANNING[product.id],
   ...WEEKLY_CHANGES[product.id],
+  stockLandsDate: stockReadyDate(product),
   studio: STUDIO_DETAILS[product.id],
   fields: seedFields(product),
   pimDate: PIM_DATES[product.id],

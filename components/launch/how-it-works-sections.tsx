@@ -121,8 +121,9 @@ export function ReadinessStatuses() {
         </InfoCard>
       </div>
       <p className="text-sm text-muted-foreground">
-        Live, Offsale and Dropped products stay in the Products table but are left out of the overview counts and the
-        Action Required page. {WORKING_DAYS_LIMITATION}
+        The Overview shows a Total Products card plus one card for each status, and they always add up. Only At Risk
+        and Information Incomplete products appear on Action Required. Launched and Dropped products stay in the
+        Products table, on their own tabs, but are left out of the counts. {WORKING_DAYS_LIMITATION}
       </p>
     </Section>
   );
@@ -143,11 +144,15 @@ export function FlagsAndPlaceholders() {
           </p>
           <p>
             <strong>Stock lands after launch</strong> marks a product whose Stock Ready Date is later than its
-            Proposed Launch Date.
+            Proposed Launch Date. The Stock Ready Date feeds this flag and the product timeline, but never the SLA or the
+            status.
           </p>
           <p>
-            Flags show as smaller cards on the Overview and as Additional Checks on Products. They never change the
-            status, the completeness or the SLA.
+            <strong>Data error</strong> marks a product whose dates cannot be read, shown as #N/A instead of a guess.
+          </p>
+          <p>
+            Flags show as Additional Checks on Products and as the Also flagged counts when one critical path is
+            selected. They never change the status, the completeness or the SLA.
           </p>
         </InfoCard>
         <InfoCard title="Placeholders">
@@ -198,6 +203,7 @@ const WALKTHROUGH = [
   "As Commercial, edit a missing field in Product information and save. The status and SLA update straight away.",
   "Change the Proposed Launch Date and watch the status change between On Track and Expectation At Risk.",
   "Switch back to Downstream and use Remind Commercial to chase every product with missing information.",
+  "On Products, switch to Studio view, or open Preview weekly summary to see the email a team would receive.",
   "Select Reset demo data in the strip at the top whenever you want to start again.",
 ] as const;
 
@@ -229,12 +235,12 @@ export function HowTheThinkingChanged() {
     <Section id="thinking" title="How the thinking changed">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <InfoCard title="Version 1">
-          <p>Modelled each team&apos;s workflow as a set of activities that had to be started and finished.</p>
+          <p>Tracked each team&apos;s work step by step, with a separate status for every stage of preparing a product.</p>
         </InfoCard>
         <InfoCard title="Version 3">
           <p>
             Discovery showed that downstream teams track their work in their own systems. The model moved to
-            information completeness and SLA risk.
+            mandatory information and SLA risk, with three statuses.
           </p>
         </InfoCard>
         <InfoCard title="Version 4">

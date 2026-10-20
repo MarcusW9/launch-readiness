@@ -173,6 +173,15 @@ The main screen stays simple. Extra columns do not go back onto the Products tab
 3. The README and How it works descriptions of `how-it-works-sections.test.tsx` now name the sections it covers, replacing wording that referred to content that no longer exists.
 4. Tests: type-check is clean and all 431 tests pass across 34 files.
 
+## Fix 6: Stock Ready Date on every product, and a rewritten guide
+
+1. **Stock Ready Date on every seed product.** Each product now has one. It defaults to 7 calendar days before the Proposed Launch Date. Two products are seeded to show "Stock lands after launch" (the Little Acorn Wooden Play Kitchen is also Information Incomplete, and another is At Risk). #N/A appears only on the Little Acorn Remote Control Racing Car, which is a deliberate data-error example. File: `lib/launch/data.ts`.
+2. **Type comment.** The comment on the Stock Ready Date field now says it feeds the "Stock lands after launch" flag and the product timeline, but never the SLA or the status. File: `lib/launch/types.ts`.
+3. **How it works rewritten for the SLA model.** Every section, caption and alt text now describes three status cards with the flagged counts, the Products columns (Cat No., Product, PIM Date, Stock Ready Date, Proposed Launch Date, SLA Projection Date, Additional Checks, Status), the product page (cause banner, date timeline, field sections, notes), Action Required as exceptions only, the two roles with Remind Commercial, the Studio view and the weekly summary. All mentions of activities, requirements, work states, Ready and Action Required statuses and the 10-day rule are removed. Two new sections, "Two roles, and Remind Commercial" and "Studio view and weekly summary", are in the page contents. Files: `components/launch/guide-sections.tsx`, `components/launch/how-it-works-sections.tsx`, `app/how-it-works/page.tsx`, `lib/launch/guide-content.ts`.
+4. **Screenshots retaken.** All seven images in `public/guide/` were captured from the current build at 1280 x 800 (the product page at full height, the mobile view at 390 wide, `overview-dark.png` in dark mode) with the Next.js dev indicator hidden. `activity-page.png` and `provide-information.png` are deleted because nothing uses them.
+5. **README** wording and tables updated to match.
+6. **Tests.** Three How it works tests were updated for the new wording and the eight-step walkthrough. Type-check is clean and all 431 tests pass across 34 files.
+
 ## Roadmap: later, not part of version 4
 
 - Job ID, as an optional field entered by the studio when a product is ready to brief.

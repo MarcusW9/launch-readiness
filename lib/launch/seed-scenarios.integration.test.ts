@@ -27,7 +27,7 @@ const SCENARIOS: Scenario[] = [
   { id: "1356789", status: "On Track", missing: 0, stockAfterLaunch: true },
   { id: "1467890", status: "Information Incomplete", missing: 2 },
   { id: "1578901", status: "On Track", missing: 0 },
-  { id: "1912345", status: "Expectation At Risk", missing: 0 },
+  { id: "1912345", status: "Expectation At Risk", missing: 0, stockAfterLaunch: true },
   { id: "1689012", status: "On Track", missing: 0 },
   { id: "1790123", status: "On Track", missing: 0 },
   { id: "1801234", status: "Information Incomplete", missing: 2 },

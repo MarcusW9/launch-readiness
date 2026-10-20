@@ -8,7 +8,9 @@ import {
   PageAnatomy,
   ProductPageTour,
   ProductsTour,
+  RolesGuide,
   SearchAndFilter,
+  StudioAndSummary,
   TestsGuide,
   ThemeAndDevices,
   UnderTheHood,
@@ -62,6 +64,8 @@ export default function HowItWorksPage() {
       <ActionRequiredTour />
       <ProductPageTour />
       <SlaGuide />
+      <RolesGuide />
+      <StudioAndSummary />
       <SearchAndFilter />
       <ThemeAndDevices />
       <Walkthrough />

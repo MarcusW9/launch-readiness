@@ -75,7 +75,10 @@ export interface Product {
    */
   previousLaunchDate?: string;
   launchDateChangedOn?: string;
-  /** ISO date the first stock lands. Shown only in the weekly summary; never feeds into any calculation. */
+  /**
+   * Stock Ready Date, as an ISO date. It feeds the "Stock lands after launch" flag and the product
+   * timeline (and is shown in the Products table and weekly summary), but never the SLA or the status.
+   */
   stockLandsDate?: string;
   /**
    * Values for the information fields that do not already live on this product (see readField).

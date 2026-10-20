@@ -27,8 +27,8 @@ Mandatory information -> SLA starts -> SLA Projection Date -> compared with the 
 
 ## How the thinking changed
 
-- **Version 1** modelled each team's workflow as activities.
-- **Version 3** moved to information completeness and SLA risk, because discovery showed that downstream teams track their work in their own systems.
+- **Version 1** tracked each team's work step by step, with a separate status for every stage.
+- **Version 3** moved to mandatory information and SLA risk, because discovery showed that downstream teams track their work in their own systems.
 - **Version 4** added changes from a show-and-tell with the teams who would use it.
 
 ## Screens
@@ -46,8 +46,8 @@ Mandatory information -> SLA starts -> SLA Projection Date -> compared with the 
 
 ### Delivered in v4 (in progress)
 
-- Restored SLA model: three statuses (On Track, Information Incomplete, Expectation At Risk) calculated from the mandatory information, the SLA working days and the Proposed Launch Date. The activity pages and workflow are removed.
-- Products table: Cat No., Product, PIM Date, Stock Ready Date, Proposed Launch Date (with launch in working days), SLA Projection Date, Additional Checks and one status badge per row. Summary cards are clickable filters, with Date Changed and Stock lands after launch shown as smaller flagged cards.
+- Restored SLA model: three statuses (On Track, Information Incomplete, Expectation At Risk) calculated from the mandatory information, the SLA working days and the Proposed Launch Date. The earlier step-by-step workflow pages are removed.
+- Products table: Cat No., Product, PIM Date, Stock Ready Date, Proposed Launch Date (with launch in working days), SLA Projection Date, Additional Checks and one status badge per row. Summary cards are clickable filters. With one critical path selected, an Also flagged row shows the Date Changed and Stock lands after launch counts.
 - Product page timeline and field sections: Product identity open by default, Photography collapsed and marked not mandatory.
 - Two simulated roles in the header: Downstream team (read-only, default) and Commercial / Range Planning (can edit fields and the Proposed Launch Date). Downstream can remind Commercial about incomplete products, and moving a launch date notifies Downstream (both simulated).
 - Products filter bar: search, Range, Brand and Critical Path. Search also finds products by critical path.
@@ -61,12 +61,12 @@ Mandatory information -> SLA starts -> SLA Projection Date -> compared with the 
 
 ### Delivered in v3.5
 
-- Every screen (Overview, Products, Action Required, the product page and the activity page) is tested through the rendered page.
+- Every screen (Overview, Products, Action Required, and the product page) is tested through the rendered page.
 - Component tests for the theme toggle, status pills, downloads, screenshots, products table, store and session.
 - Documentation checks: a test compares this README, the How it works guide and the change logs with the real project.
 - Wording fix: Overview now says "1 product needs your attention" for a single product.
 - Change log history: the How it works page leads with the latest change log, and earlier versions are collapsed into an expandable history, each still downloadable.
-- 431 automated tests across 34 test files, plus 8 browser tests (run on desktop and mobile) covering navigation, providing information and the activity workflow.
+- 431 automated tests across 34 test files, plus 3 browser tests (run on desktop and mobile) covering navigation, opening a product from Action Required and checking that removed pages no longer exist.
 
 ### Delivered in v3
 
@@ -102,7 +102,7 @@ public/docs/archive/    Past change logs (v3.5, v3), shown in the history on How
 
 Design choices:
 
-- **Rules apart from screens.** Readiness, activity applicability, information, filters and wording are plain functions with no UI code, which is why they are thoroughly testable.
+- **Rules apart from screens.** Statuses, SLA projection, information, filters and wording are plain functions with no UI code, which is why they are thoroughly testable.
 - **One door for data.** Pages and the store read products only through the repository. Connecting a real API or database changes one module. That needs Engineering and InfoSec approval and is not done.
 - **Auth seam without auth.** `lib/auth` provides a `Session`, a permission list and a mock provider. The header shows the demo user and the Reset button is permission-gated. A real identity provider would replace the mock provider.
 
@@ -133,7 +133,7 @@ pnpm dev        # http://localhost:3000
 
 | File | Tests | Protects |
 | --- | ---: | --- |
-| `lib/launch/readiness.test.ts` | 11 | Ready, Action Required and At Risk, the 10-day rule, lifecycle products and the needs-attention count. |
+| `lib/launch/readiness.test.ts` | 11 | The needs-attention count and lifecycle products: Launched and Dropped products are left out of the counts. |
 | `lib/launch/working-days.test.ts` | 13 | Working day arithmetic: weekends skipped forwards and backwards, 20 and 25 day spans, the gap between two dates, and singular and plural wording. |
 | `lib/launch/completeness.test.ts` | 20 | The 31 information fields and 13 mandatory ones: what counts as missing, N/A only in optional fields, data errors shown once, and optional fields never blocking completeness. |
 | `lib/launch/sla.test.ts` | 9 | The placeholder SLA: 20 working days by default, 25 for a Guest bed, the completion date and the projection date. |
@@ -151,14 +151,14 @@ pnpm dev        # http://localhost:3000
 | `lib/launch/docs-consistency.test.ts` | 18 | That this list, the README, every change log release, the screenshots and the product IDs in the guide match the project. |
 | `lib/auth/auth.test.ts` | 20 | The demo session, roles and the permission checks behind the Reset demo data button and adding product notes. |
 | `lib/auth/session-context.test.tsx` | 6 | How components read the session and permissions, and that using it outside the provider fails loudly. |
-| `components/launch/status.test.tsx` | 6 | Every readiness, lifecycle, activity and work-state pill says its status in words, including Unable to start. |
+| `components/launch/status.test.tsx` | 6 | Every status and lifecycle pill says its status in words, including Data error. |
 | `components/launch/products-table.test.tsx` | 6 | The Products table: columns, one row per product, links, status words and whole-row clicks. |
 | `components/launch/theme-toggle.test.tsx` | 5 | The dark mode toggle: its label, both directions, keyboard use and the unresolved-theme case. |
 | `components/launch/download-button.test.tsx` | 4 | The download links on How it works, including the real change log link. |
 | `components/launch/guide-figure.test.tsx` | 8 | Guide screenshots: captions, the scroll frame for tall pages and the top-to-bottom lists. |
 | `components/launch/overview-view.test.tsx` | 10 | The Overview screen: summary cards, singular and plural wording, launched products and the links into filtered lists. |
 | `components/launch/products-view.test.tsx` | 25 | The Products screen: urgency order, search, Range, Brand and Critical Path filters, the Active, Launched and Dropped tabs, the critical path summary, the no-results state and clearing filters. |
-| `components/launch/action-required-view.test.tsx` | 10 | The Action Required screen: At Risk before Action Required, group counts, ordering by launch date and links to each activity. |
+| `components/launch/action-required-view.test.tsx` | 10 | The Action Required screen: At Risk before Information Incomplete, group counts, ordering by launch date and links to each product. |
 | `components/launch/product-detail-view.test.tsx` | 11 | The Product page: readiness banner, summary, progress and the Provide information form from open to saved. |
 | `components/launch/product-notes.test.tsx` | 11 | The Notes section on the Product page: title and count, newest first, adding as each role, the character count, the permanent-log caption and its place above the information sections. |
 | `components/launch/studio-view.test.tsx` | 17 | The Studio view on Products: the view switch in both roles, the Studio columns, filters with chips and Clear all, Group by style, the critical path strip without status cards, and the CSV export. |
@@ -170,20 +170,20 @@ pnpm dev        # http://localhost:3000
 
 Coverage of the business rules and auth (`lib/**`) is about 99 percent of statements, 99 percent of branches and 100 percent of functions. `vitest.config.mts` fails the run if `lib/**` drops below 95 percent statements, 90 percent branches, 95 percent functions or 95 percent lines.
 
-Components are measured but not gated. About 96 percent of component statements, 90 percent of branches and 95 percent of functions are covered. All five screens (Overview, Products, Action Required, Product page and Activity page), the app shell and the How it works page are tested through the rendered page, including the provide-information form, search and filters, moving work through its stages, the live Action Required count and who can reset the demo data.
+Components are measured but not gated. About 96 percent of component statements, 90 percent of branches and 95 percent of functions are covered. All four screens (Overview, Products, Action Required and Product page), the app shell and the How it works page are tested through the rendered page, including the provide-information form, search and filters, the live Action Required count and who can reset the demo data.
 
 Not yet covered by automated tests: parts of the filter bar and the Products table. Visual appearance is still checked by hand in the browser.
 
 ### Browser tests
 
-Eight Playwright specs in `e2e/` run the main journeys in a real browser on a desktop and a mobile viewport (16 runs): moving between pages, opening a product from Action Required, providing missing information (save and cancel), advancing and reversing an activity stage, and resetting the demo data. Run `pnpm test:e2e`, which builds and starts the app on port 3100. Set `E2E_BASE_URL` to test an already running server instead. On a fresh machine, run `pnpm exec playwright install chromium` once first.
+Three Playwright specs in `e2e/` run the main journeys in a real browser on a desktop and a mobile viewport (6 runs): moving between pages, opening a product from Action Required, and checking that removed pages no longer exist. Run `pnpm test:e2e`, which builds and starts the app on port 3100. Set `E2E_BASE_URL` to test an already running server instead. On a fresh machine, run `pnpm exec playwright install chromium` once first.
 
 ## Progress
 
 | Area | State |
 | --- | --- |
-| Core readiness model and six activities | Done |
-| Overview, Products, Action Required, Product and Activity screens | Done |
+| SLA readiness model: three statuses, flags and Stock Ready Date | Done |
+| Overview, Products, Action Required and Product screens | Done |
 | Information model and provide-in-place | Done |
 | Search and five filters | Done |
 | Light and dark theme | Done |

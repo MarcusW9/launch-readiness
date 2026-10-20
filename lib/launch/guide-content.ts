@@ -49,6 +49,8 @@ export const GUIDE_CONTENTS = [
   { id: "action-screen", label: "Screen 3: Action Required" },
   { id: "product-screen", label: "Screen 4: A product page" },
   { id: "sla", label: "The SLA, in working days" },
+  { id: "roles-and-reminders", label: "Two roles, and Remind Commercial" },
+  { id: "studio-and-summary", label: "Studio view and weekly summary" },
   { id: "search-and-filter", label: "Searching and filtering" },
   { id: "theme-and-devices", label: "Light, dark and small screens" },
   { id: "try-it", label: "Try it in five minutes" },
@@ -64,7 +66,7 @@ export const TEST_FILES = [
   {
     file: "lib/launch/readiness.test.ts",
     tests: 11,
-    protects: "Ready, Action Required and At Risk, the 10-day rule, lifecycle products and the needs-attention count.",
+    protects: "The needs-attention count and lifecycle products: Launched and Dropped products are left out of the counts.",
   },
   {
     file: "lib/launch/working-days.test.ts",
@@ -154,7 +156,7 @@ export const TEST_FILES = [
   {
     file: "components/launch/status.test.tsx",
     tests: 6,
-    protects: "Every readiness, lifecycle, activity and work-state pill says its status in words, including Unable to start.",
+    protects: "Every status and lifecycle pill says its status in words, including Data error.",
   },
   {
     file: "components/launch/products-table.test.tsx",
@@ -189,7 +191,7 @@ export const TEST_FILES = [
   {
     file: "components/launch/action-required-view.test.tsx",
     tests: 10,
-    protects: "The Action Required screen: At Risk before Action Required, group counts, ordering by launch date and links to each activity.",
+    protects: "The Action Required screen: At Risk before Information Incomplete, group counts, ordering by launch date and links to each product.",
   },
   {
     file: "components/launch/product-detail-view.test.tsx",

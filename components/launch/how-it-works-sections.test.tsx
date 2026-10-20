@@ -75,7 +75,7 @@ describe("ReadinessStatuses", () => {
   it("says where products that are no longer being prepared go", () => {
     render(<ReadinessStatuses />);
 
-    expect(screen.getByText(/left out of the overview counts and the\s+Action Required page/)).toBeInTheDocument();
+    expect(screen.getByText(/left out of the counts/)).toBeInTheDocument();
   });
 });
 
@@ -114,11 +114,11 @@ describe("SlaGuide", () => {
 });
 
 describe("Walkthrough", () => {
-  it("lists the seven steps as a numbered sequence", () => {
+  it("lists the eight steps as a numbered sequence", () => {
     render(<Walkthrough />);
 
     const items = screen.getAllByRole("listitem");
-    expect(items).toHaveLength(7);
+    expect(items).toHaveLength(8);
     items.forEach((item, index) => expect(item).toHaveTextContent(new RegExp(`^${index + 1}`)));
   });
 
@@ -146,7 +146,7 @@ describe("HowTheThinkingChanged", () => {
       .getAllByRole("heading", { level: 3 })
       .map((heading) => heading.textContent);
     expect(titles).toEqual(["Version 1", "Version 3", "Version 4"]);
-    expect(within(region).getByText(/information\s+completeness and SLA risk/)).toBeInTheDocument();
+    expect(within(region).getByText(/mandatory\s+information and SLA risk, with three statuses/)).toBeInTheDocument();
     expect(within(region).getByText(/show-and-tell/)).toBeInTheDocument();
   });
 });
