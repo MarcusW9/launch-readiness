@@ -1,3 +1,5 @@
+import type { FieldKey } from "./readiness-config";
+
 export type ActivityKey =
   | "product-setup"
   | "variants"
@@ -170,6 +172,13 @@ export interface Product {
   launchDateChangedOn?: string;
   /** ISO date the first stock lands. Shown only in the weekly summary; never feeds into any calculation. */
   stockLandsDate?: string;
+  /**
+   * Values for the information fields that do not already live on this product (see readField).
+   * A missing key, a blank value, "#N/A" or "#REF!" all mean the field is missing.
+   */
+  fields?: Partial<Record<FieldKey, string>>;
+  /** ISO date the last mandatory field was completed. Starts the SLA. Never later than the demo date. */
+  infoCompleteAt?: string;
   /** Information known so far. A missing key means the information is missing. */
   information: Partial<Record<InformationKey, ProvidedInformation>>;
   activities: Partial<Record<ActivityKey, ActivityState>>;
