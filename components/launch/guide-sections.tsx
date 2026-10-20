@@ -504,8 +504,11 @@ export function ProductPageTour() {
             <>
               <strong>Product information (left).</strong> A line such as &quot;11 of 13 mandatory fields complete.&quot;
               Fields are grouped into sections, for example Product identity, Supplier, Variants and setup, and
-              Photography and digital. A complete section collapses to one line. A section with gaps lists each field,
-              marked mandatory or not, with a Missing label where it is empty.
+              Photography and digital. A section whose mandatory fields are all in collapses to one line and reads
+              Complete; a section with mandatory gaps opens and reads, for example, &quot;1 mandatory missing&quot;.
+              Only mandatory fields look like a problem: an empty one shows an amber Missing label, while an empty
+              optional field shows plain grey Not provided. A field holding #N/A or #REF! shows a Data error label
+              either way. A section with no mandatory fields, such as Photography and digital, has no badge.
             </>,
             <>
               <strong>Notes (right).</strong> A &quot;Notes (n)&quot; log, newest first. Each note shows its text,

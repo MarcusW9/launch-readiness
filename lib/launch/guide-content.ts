@@ -195,8 +195,8 @@ export const TEST_FILES = [
   },
   {
     file: "components/launch/product-detail-view.test.tsx",
-    tests: 11,
-    protects: "The Product page: readiness banner, summary, progress and the Provide information form from open to saved.",
+    tests: 17,
+    protects: "The Product page: readiness banner, summary, progress, and how empty fields read (Missing for mandatory, plain Not provided for optional, Data error kept, section badges).",
   },
   {
     file: "components/launch/product-notes.test.tsx",
@@ -236,7 +236,7 @@ export const TEST_FILES = [
 ] as const;
 
 export const TEST_TOTALS = {
-  tests: 431,
+  tests: 437,
   files: 34,
   coverage: 99,
 } as const;

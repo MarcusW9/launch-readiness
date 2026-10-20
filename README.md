@@ -66,7 +66,7 @@ Mandatory information -> SLA starts -> SLA Projection Date -> compared with the 
 - Documentation checks: a test compares this README, the How it works guide and the change logs with the real project.
 - Wording fix: Overview now says "1 product needs your attention" for a single product.
 - Change log history: the How it works page leads with the latest change log, and earlier versions are collapsed into an expandable history, each still downloadable.
-- 431 automated tests across 34 test files, plus 3 browser tests (run on desktop and mobile) covering navigation, opening a product from Action Required and checking that removed pages no longer exist.
+- 437 automated tests across 34 test files, plus 3 browser tests (run on desktop and mobile) covering navigation, opening a product from Action Required and checking that removed pages no longer exist.
 
 ### Delivered in v3
 
@@ -77,7 +77,7 @@ Mandatory information -> SLA starts -> SLA Projection Date -> compared with the 
 - Asynchronous product repository as the single data seam.
 - Session and permissions architecture with a built-in demo user. There is deliberately no sign-in screen.
 - A full How it works guide with eight screenshots and a downloadable Markdown change log.
-- 191 automated tests across 10 test files at release (now 431 across 34, see above).
+- 191 automated tests across 10 test files at release (now 437 across 34, see above).
 
 ### Behaviour worth knowing
 
@@ -129,7 +129,7 @@ pnpm dev        # http://localhost:3000
 
 ## Tests
 
-**431 tests across 34 test files, all passing, in a few seconds.** Business rules are tested as plain functions; components are tested the way a person uses them (by role, label and visible text) with Testing Library in jsdom.
+**437 tests across 34 test files, all passing, in a few seconds.** Business rules are tested as plain functions; components are tested the way a person uses them (by role, label and visible text) with Testing Library in jsdom.
 
 | File | Tests | Protects |
 | --- | ---: | --- |
@@ -159,7 +159,7 @@ pnpm dev        # http://localhost:3000
 | `components/launch/overview-view.test.tsx` | 10 | The Overview screen: summary cards, singular and plural wording, launched products and the links into filtered lists. |
 | `components/launch/products-view.test.tsx` | 25 | The Products screen: urgency order, search, Range, Brand and Critical Path filters, the Active, Launched and Dropped tabs, the critical path summary, the no-results state and clearing filters. |
 | `components/launch/action-required-view.test.tsx` | 10 | The Action Required screen: At Risk before Information Incomplete, group counts, ordering by launch date and links to each product. |
-| `components/launch/product-detail-view.test.tsx` | 11 | The Product page: readiness banner, summary, progress and the Provide information form from open to saved. |
+| `components/launch/product-detail-view.test.tsx` | 17 | The Product page: readiness banner, summary, progress, and how empty fields read (Missing for mandatory, plain Not provided for optional, Data error kept, section badges). |
 | `components/launch/product-notes.test.tsx` | 11 | The Notes section on the Product page: title and count, newest first, adding as each role, the character count, the permanent-log caption and its place above the information sections. |
 | `components/launch/studio-view.test.tsx` | 17 | The Studio view on Products: the view switch in both roles, the Studio columns, filters with chips and Clear all, Group by style, the critical path strip without status cards, and the CSV export. |
 | `components/launch/weekly-summary-dialog.test.tsx` | 6 | The weekly summary preview: the button in both roles, the subject and headline, linked Cat Nos, on track as a count only, Copy text, and the simulated send with its toast and notification. |

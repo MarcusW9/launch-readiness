@@ -59,10 +59,12 @@ function FieldRow({ productId, field }: { productId: string; field: FieldAssessm
         ) : (
           <>
             <span className="flex flex-wrap items-center gap-2">
-              {missing ? (
-                <Pill tone={dataError ? "danger" : "warning"}>
-                  {dataError ? `Data error (${value?.trim()})` : "Missing"}
-                </Pill>
+              {missing && dataError ? (
+                <Pill tone="danger">Data error ({value?.trim()})</Pill>
+              ) : missing && definition.mandatory ? (
+                <Pill tone="warning">Missing</Pill>
+              ) : missing ? (
+                <span className="text-muted-foreground">Not provided</span>
               ) : (
                 <span>{value}</span>
               )}
@@ -97,6 +99,7 @@ function GroupSection({
   label: string;
   fields: FieldAssessment[];
 }) {
+  const mandatoryCount = fields.filter((field) => field.definition.mandatory).length;
   const missingMandatory = fields.filter((field) => field.definition.mandatory && field.missing).length;
   const [open, setOpen] = useState(missingMandatory > 0);
 
@@ -112,9 +115,9 @@ function GroupSection({
         </span>
         {missingMandatory > 0 ? (
           <Pill tone="warning">{missingMandatory} mandatory missing</Pill>
-        ) : (
+        ) : mandatoryCount > 0 ? (
           <Pill tone="success">Complete</Pill>
-        )}
+        ) : null}
       </summary>
       <dl className="m-0 border-t">
         {fields.map((field) => (

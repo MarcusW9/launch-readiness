@@ -90,6 +90,60 @@ describe("ProductDetailView", () => {
 
       expect(screen.getByText("1 mandatory missing")).toBeInTheDocument();
     });
+
+    const rowFor = (label: string) => screen.getByText(label).closest("div") as HTMLElement;
+    const headerFor = (label: RegExp) => screen.getByText(label).closest("summary") as HTMLElement;
+
+    it("keeps the amber Missing badge for an empty mandatory field", () => {
+      renderWithStore(<ProductDetailView productId="1000003" />, [incomplete]);
+
+      const row = rowFor("Supplier Name");
+      expect(within(row).getByText("Missing")).toBeInTheDocument();
+      expect(within(row).getByText("(mandatory)")).toBeInTheDocument();
+      expect(within(row).queryByText("Not provided")).not.toBeInTheDocument();
+    });
+
+    it("shows an empty optional field as plain muted Not provided, with no badge", () => {
+      renderWithStore(<ProductDetailView productId="1000001" />, [onTrack]);
+
+      const row = rowFor("Sub-range");
+      const text = within(row).getByText("Not provided");
+      expect(text).toHaveClass("text-muted-foreground");
+      expect(within(row).queryByText("Missing")).not.toBeInTheDocument();
+      expect(within(row).queryByText("(mandatory)")).not.toBeInTheDocument();
+    });
+
+    it("never shows Missing when only optional fields are empty", () => {
+      renderWithStore(<ProductDetailView productId="1000001" />, [onTrack]);
+
+      expect(screen.queryByText("Missing")).not.toBeInTheDocument();
+      expect(screen.queryByText(/mandatory missing/)).not.toBeInTheDocument();
+    });
+
+    it("keeps the Data error badge for an optional field holding #N/A", () => {
+      const product = makeProduct({ id: "1000005", name: "Odd Lamp", fields: { barcode: "#N/A" } });
+      renderWithStore(<ProductDetailView productId="1000005" />, [product]);
+
+      const row = rowFor("Barcode (EAN)");
+      expect(within(row).getByText("Data error (#N/A)")).toBeInTheDocument();
+      expect(within(row).queryByText("Missing")).not.toBeInTheDocument();
+      expect(within(row).queryByText("Not provided")).not.toBeInTheDocument();
+    });
+
+    it("shows Complete on a section whose mandatory fields are all in, even with optional gaps", () => {
+      renderWithStore(<ProductDetailView productId="1000001" />, [onTrack]);
+
+      const header = headerFor(/Product identity|Identity/i);
+      expect(within(header).getByText("Complete")).toBeInTheDocument();
+    });
+
+    it("leaves a section with no mandatory fields without a badge", () => {
+      renderWithStore(<ProductDetailView productId="1000001" />, [onTrack]);
+
+      const header = headerFor(/Photography/i);
+      expect(within(header).queryByText("Complete")).not.toBeInTheDocument();
+      expect(within(header).queryByText(/mandatory missing/)).not.toBeInTheDocument();
+    });
   });
 
   describe("launch date", () => {
