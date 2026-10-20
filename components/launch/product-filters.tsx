@@ -5,13 +5,11 @@ import { ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   EMPTY_FILTERS,
-  INFORMATION_OPTIONS,
+  FLAG_OPTIONS,
   LAUNCH_WINDOW_OPTIONS,
-  OUTSTANDING_OPTIONS,
-  readinessOptionsFor,
-  type InformationFilter,
+  STATUS_OPTIONS,
+  type FlagFilter,
   type LaunchWindow,
-  type OutstandingFilter,
   type ProductFilters,
 } from "@/lib/launch/filters";
 import { LabelledSelect } from "./labelled-select";
@@ -39,10 +37,9 @@ function withAll(allLabel: string, values: string[]) {
 function hasMoreFiltersApplied(filters: ProductFilters): boolean {
   return (
     filters.category !== EMPTY_FILTERS.category ||
-    filters.readiness !== EMPTY_FILTERS.readiness ||
+    filters.status !== EMPTY_FILTERS.status ||
     filters.window !== EMPTY_FILTERS.window ||
-    filters.outstanding !== EMPTY_FILTERS.outstanding ||
-    filters.information !== EMPTY_FILTERS.information
+    filters.flag !== EMPTY_FILTERS.flag
   );
 }
 
@@ -104,7 +101,7 @@ export function ProductFiltersBar({
       <div
         id={moreId}
         hidden={!moreOpen}
-        className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5"
+        className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
       >
         <LabelledSelect
           label="Category"
@@ -114,9 +111,9 @@ export function ProductFiltersBar({
         />
         <LabelledSelect
           label="Status"
-          options={readinessOptionsFor(filters.tab)}
-          value={filters.readiness}
-          onChange={(readiness) => onChange({ ...filters, readiness: readiness as ProductFilters["readiness"] })}
+          options={STATUS_OPTIONS}
+          value={filters.status}
+          onChange={(status) => onChange({ ...filters, status: status as ProductFilters["status"] })}
         />
         <LabelledSelect
           label="Launch date"
@@ -125,16 +122,10 @@ export function ProductFiltersBar({
           onChange={(window) => onChange({ ...filters, window: window as LaunchWindow })}
         />
         <LabelledSelect
-          label="Outstanding work"
-          options={OUTSTANDING_OPTIONS}
-          value={filters.outstanding}
-          onChange={(outstanding) => onChange({ ...filters, outstanding: outstanding as OutstandingFilter })}
-        />
-        <LabelledSelect
-          label="Information"
-          options={INFORMATION_OPTIONS}
-          value={filters.information}
-          onChange={(information) => onChange({ ...filters, information: information as InformationFilter })}
+          label="Flag"
+          options={FLAG_OPTIONS}
+          value={filters.flag}
+          onChange={(flag) => onChange({ ...filters, flag: flag as FlagFilter })}
         />
       </div>
     </section>

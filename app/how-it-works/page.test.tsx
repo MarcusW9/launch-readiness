@@ -62,7 +62,7 @@ describe("the How it works page", () => {
     render(<HowItWorksPage />);
     const images = screen.getAllByRole("img");
 
-    expect(images.length).toBeGreaterThanOrEqual(9);
+    expect(images.length).toBeGreaterThanOrEqual(8);
     for (const image of images) expect(image.getAttribute("alt")?.length, image.getAttribute("src") ?? "").toBeGreaterThan(20);
   });
 

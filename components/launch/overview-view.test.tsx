@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { makeProduct, stateAt, withActivity, withoutInformation } from "@/lib/launch/testing/fixtures";
+import { makeProduct, withMissingFields } from "@/lib/launch/testing/fixtures";
 import { renderWithStore } from "@/lib/launch/testing/render";
 import { OverviewView } from "./overview-view";
 
@@ -10,11 +10,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 const ready = makeProduct({ id: "1000001", name: "Ready Armchair" });
-const needsContent = withActivity(
-  makeProduct({ id: "1000002", name: "Unfinished Table" }),
-  "product-content",
-  stateAt("in-progress"),
-);
+const incomplete = withMissingFields(makeProduct({ id: "1000002", name: "Unfinished Table" }), "supplierName");
 
 describe("OverviewView", () => {
   it("has the page title and description", () => {
@@ -24,33 +20,36 @@ describe("OverviewView", () => {
     expect(screen.getByText(/Track upcoming products/)).toBeInTheDocument();
   });
 
-  it("says nothing needs attention when every product is ready", () => {
+  it("says nothing needs attention when every product is on track", () => {
     renderWithStore(<OverviewView />, [ready]);
 
     expect(screen.getByText("Nothing needs attention")).toBeInTheDocument();
-    expect(screen.getByText("Every product is ready to launch.")).toBeInTheDocument();
+    expect(screen.getByText("Every product is on track.")).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /See what is holding each one back/ })).not.toBeInTheDocument();
   });
 
   it("uses the singular when exactly one product needs attention", () => {
-    renderWithStore(<OverviewView />, [ready, needsContent]);
+    renderWithStore(<OverviewView />, [ready, incomplete]);
 
     expect(screen.getByText("1 product needs your attention")).toBeInTheDocument();
   });
 
   it("uses the plural when several products need attention", () => {
-    const another = withActivity(
-      makeProduct({ id: "1000003", name: "Another Table" }),
-      "product-content",
-      stateAt("in-progress"),
-    );
-    renderWithStore(<OverviewView />, [needsContent, another]);
+    const another = withMissingFields(makeProduct({ id: "1000003", name: "Another Table" }), "supplierName");
+    renderWithStore(<OverviewView />, [incomplete, another]);
 
     expect(screen.getByText("2 products need your attention")).toBeInTheDocument();
   });
 
+  it("splits attention between at risk and waiting on information", () => {
+    const atRisk = makeProduct({ id: "1000004", name: "Late Lamp", launchDate: "2026-11-20", infoCompleteAt: "2026-11-02" });
+    renderWithStore(<OverviewView />, [atRisk, incomplete]);
+
+    expect(screen.getByText(/1 at risk of missing launch and 1 waiting on mandatory information/)).toBeInTheDocument();
+  });
+
   it("links to the Action Required screen when something needs attention", () => {
-    renderWithStore(<OverviewView />, [needsContent]);
+    renderWithStore(<OverviewView />, [incomplete]);
 
     expect(screen.getByRole("link", { name: "See what is holding each one back" })).toHaveAttribute(
       "href",
@@ -58,30 +57,12 @@ describe("OverviewView", () => {
     );
   });
 
-  it("does not show the missing-information notice when everything is known", () => {
-    renderWithStore(<OverviewView />, [ready]);
-
-    expect(screen.queryByText(/missing required information/)).not.toBeInTheDocument();
-  });
-
-  it("counts missing information separately from outstanding work", () => {
-    const missingOne = withoutInformation(makeProduct({ id: "1000004", name: "Mystery Chair" }), "supplier");
-    renderWithStore(<OverviewView />, [ready, missingOne]);
-
-    expect(screen.getByText("1 product is missing required information")).toBeInTheDocument();
-    expect(screen.getByText(/1 piece of information still need someone to provide them/)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "See which products" })).toHaveAttribute(
-      "href",
-      "/products?information=missing",
-    );
-  });
-
   it("lists the most urgent launches in a table", () => {
-    renderWithStore(<OverviewView />, [ready, needsContent]);
+    renderWithStore(<OverviewView />, [ready, incomplete]);
 
     const table = screen.getByRole("table", { name: "Most urgent upcoming launches" });
-    expect(within(table).getByRole("link", { name: "Ready Armchair" })).toBeInTheDocument();
-    expect(within(table).getByRole("link", { name: "Unfinished Table" })).toBeInTheDocument();
+    expect(within(table).getByText("Ready Armchair")).toBeInTheDocument();
+    expect(within(table).getByText("Unfinished Table")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /View all products/ })).toHaveAttribute("href", "/products");
   });
 
@@ -95,26 +76,17 @@ describe("OverviewView", () => {
     expect(within(table).getAllByRole("row").slice(1)).toHaveLength(6);
   });
 
-  it("shows how much work is complete for each activity", () => {
-    renderWithStore(<OverviewView />, [ready, needsContent]);
+  it("reports mandatory fields complete out of the total", () => {
+    renderWithStore(<OverviewView />, [incomplete]);
 
-    expect(screen.getByText("Product setup: 2 of 2 complete")).toBeInTheDocument();
-    expect(screen.getByText("Product content: 1 of 2 complete")).toBeInTheDocument();
-    expect(screen.getByText("Variants: 0 of 0 complete")).toBeInTheDocument();
-  });
-
-  it("reports required information available out of the total", () => {
-    const missingOne = withoutInformation(makeProduct({ id: "1000004", name: "Mystery Chair" }), "supplier");
-    renderWithStore(<OverviewView />, [missingOne]);
-
-    expect(screen.getByText(/Required information available: \d+ of \d+/)).toBeInTheDocument();
+    expect(screen.getByText(/Mandatory fields complete: \d+ of \d+/)).toBeInTheDocument();
   });
 
   it("ignores products that have already launched", () => {
     const launched = makeProduct({ id: "1000005", name: "Old Cushion", lifecycle: "Live" });
     renderWithStore(<OverviewView />, [launched]);
 
-    expect(screen.queryByRole("link", { name: "Old Cushion" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Old Cushion")).not.toBeInTheDocument();
     expect(screen.getByText("Nothing needs attention")).toBeInTheDocument();
   });
 });

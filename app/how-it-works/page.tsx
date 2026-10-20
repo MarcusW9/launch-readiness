@@ -2,23 +2,24 @@ import type { Metadata } from "next";
 import { DownloadButton } from "@/components/launch/download-button";
 import {
   ActionRequiredTour,
-  ActivityPageTour,
   ChangelogHistory,
   GuideContents,
   OverviewTour,
   PageAnatomy,
   ProductPageTour,
   ProductsTour,
-  ProvideInformationTour,
+  RolesGuide,
   SearchAndFilter,
+  StudioAndSummary,
   TestsGuide,
   ThemeAndDevices,
   UnderTheHood,
   WhatsNewInLatest,
-  WorkStatesGuide,
 } from "@/components/launch/guide-sections";
 import {
-  ActivityGuide,
+  FlagsAndPlaceholders,
+  HowTheThinkingChanged,
+  SlaGuide,
   Limits,
   ReadinessStatuses,
   TheModel,
@@ -56,20 +57,21 @@ export default function HowItWorksPage() {
       <WhatItIs />
       <TheModel />
       <ReadinessStatuses />
+      <FlagsAndPlaceholders />
       <PageAnatomy />
       <OverviewTour />
       <ProductsTour />
       <ActionRequiredTour />
       <ProductPageTour />
-      <ProvideInformationTour />
-      <ActivityGuide />
-      <WorkStatesGuide />
-      <ActivityPageTour />
+      <SlaGuide />
+      <RolesGuide />
+      <StudioAndSummary />
       <SearchAndFilter />
       <ThemeAndDevices />
       <Walkthrough />
       <UnderTheHood />
       <TestsGuide />
+      <HowTheThinkingChanged />
       <Limits />
       <ChangelogHistory />
     </Page>

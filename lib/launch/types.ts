@@ -1,94 +1,17 @@
-export type ActivityKey =
-  | "product-setup"
-  | "variants"
-  | "studio-imagery"
-  | "supplier-imagery"
-  | "product-content"
-  | "compliance";
+import type { FieldKey } from "./readiness-config";
 
-/** The controlled status model. Free text is never used as a workflow status. */
-export type ActivityStatus =
-  | "Not Started"
-  | "In Progress"
-  | "Complete"
-  | "Blocked"
-  | "Not Required";
-
-export type Readiness = "Ready" | "Action Required" | "At Risk";
-
-/**
- * Products that are no longer being prepared for launch. Their activities are
- * never counted as outstanding work and they never appear in Action Required.
- */
+/** Products that are no longer being prepared for launch. They are listed after everything else. */
 export type ProductLifecycle = "Live" | "Dropped" | "Offsale";
-
-/** What a product's status pill shows: readiness while preparing, lifecycle once it is not. */
-export type LaunchStatus = Readiness | ProductLifecycle;
-
-/**
- * Information is separate from work. These are the pieces of information the
- * prototype's requirements depend on. Deliberately a short, focused list.
- */
-export type InformationKey =
-  | "supplier"
-  | "pricing"
-  | "hierarchy"
-  | "variant-options"
-  | "variant-pricing"
-  | "photography-instructions"
-  | "shot-list"
-  | "styling-direction"
-  | "sample-availability"
-  | "dimensions"
-  | "supplier-contact"
-  | "image-delivery"
-  | "spec-sheet"
-  | "key-features"
-  | "regulatory-category"
-  | "safety-evidence";
-
-/** Where a known piece of information came from (conceptual, not a system). */
-export type InformationSource = "existing" | "team";
-
-export interface ProvidedInformation {
-  value: string;
-  source: InformationSource;
-  /** ISO timestamp (demo clock) when a team member supplied it. */
-  at?: string;
-}
-
-/**
- * Derived workflow state. Combines information readiness with workflow
- * progress so the two are never confused.
- */
-export type WorkState =
-  | "Not Required"
-  | "Awaiting information"
-  | "Ready to start"
-  | "In Progress"
-  | "Blocked"
-  | "Complete";
 
 export type ImagerySource = "studio" | "supplier";
 
-/**
- * Product characteristics drive which activities apply. This is the seam where
- * a future rules engine (or a PIM-fed attribute set) would plug in.
- */
+/** Product characteristics. Own Brand/Branded is read as a mandatory field. */
 export interface ProductCharacteristics {
   imagerySource: ImagerySource;
   hasVariants: boolean;
   /** Present only when compliance sign-off is required. */
   complianceReason?: string;
   ownBrand: boolean;
-}
-
-export interface Note {
-  id: string;
-  /** ISO timestamp (demo clock). */
-  at: string;
-  author: string;
-  text: string;
 }
 
 /** Who wrote a product note. Both roles can add notes; only Commercial can change product fields. */
@@ -105,22 +28,6 @@ export interface ProductNote {
   author: string;
   role: NoteRole;
   text: string;
-}
-
-export interface HistoryEntry {
-  id: string;
-  at: string;
-  text: string;
-}
-
-/** Mutable, per-product state of one applicable activity. */
-export interface ActivityState {
-  /** Id of the current stage in the activity's workflow. */
-  stage: string;
-  blocked: boolean;
-  blockedReason?: string;
-  notes: Note[];
-  history: HistoryEntry[];
 }
 
 export interface StudioBrief {
@@ -168,46 +75,20 @@ export interface Product {
    */
   previousLaunchDate?: string;
   launchDateChangedOn?: string;
-  /** ISO date the first stock lands. Shown only in the weekly summary; never feeds into any calculation. */
+  /**
+   * Stock Ready Date, as an ISO date. It feeds the "Stock lands after launch" flag and the product
+   * timeline (and is shown in the Products table and weekly summary), but never the SLA or the status.
+   */
   stockLandsDate?: string;
-  /** Information known so far. A missing key means the information is missing. */
-  information: Partial<Record<InformationKey, ProvidedInformation>>;
-  activities: Partial<Record<ActivityKey, ActivityState>>;
+  /**
+   * Values for the information fields that do not already live on this product (see readField).
+   * A missing key, a blank value, "#N/A" or "#REF!" all mean the field is missing.
+   */
+  fields?: Partial<Record<FieldKey, string>>;
+  /** ISO date the product was entered in the PIM. Never later than infoCompleteAt, and never later than the demo date. */
+  pimDate?: string;
+  /** ISO date the last mandatory field was completed. Starts the SLA. Never later than the demo date. */
+  infoCompleteAt?: string;
   /** Product-level notes log, newest first. Absent means no notes yet. */
   notes?: ProductNote[];
-}
-
-export interface WorkflowStage {
-  id: string;
-  label: string;
-  /** Controlled status this stage maps to. */
-  status: Exclude<ActivityStatus, "Blocked" | "Not Required">;
-}
-
-export interface Applicability {
-  applies: boolean;
-  /** Plain-language reason, shown whether the activity is required or not. */
-  reason: string;
-}
-
-export interface ActivityDefinition {
-  key: ActivityKey;
-  name: string;
-  /** Short label used in the dashboard table. */
-  shortName: string;
-  description: string;
-  /** Team that typically owns the activity (demo assumption). */
-  ownerTeam: string;
-  /** Generic definition of done shown on the activity page. */
-  doneWhen: string;
-  workflow: WorkflowStage[];
-  /** Information this requirement needs in total, once it applies. */
-  requiredInfo: InformationKey[];
-  /** Subset of requiredInfo that must exist before the work can begin. */
-  startInfo: InformationKey[];
-  /** Verb for the first step, used in sentences such as "cannot brief". State labels stay generic. */
-  startVerb: string;
-  /** Next-action wording once the work can begin, e.g. "Brief the studio". */
-  startAction: string;
-  appliesTo: (product: Product) => Applicability;
 }

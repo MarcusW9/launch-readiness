@@ -2,17 +2,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { TriangleAlert } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { resolveActivity, resolveImagery } from "@/lib/launch/activities";
-import { getMissingInformation } from "@/lib/launch/information-overview";
-import {
-  describeDaysToLaunch,
-  formatShortDate,
-  summariseReadiness,
-} from "@/lib/launch/readiness";
+import { formatShortDate } from "@/lib/launch/readiness";
+import { assessProduct, describeLaunchIn } from "@/lib/launch/readiness-model";
+import { describeSla, slaProjectionDate } from "@/lib/launch/sla";
 import type { Product } from "@/lib/launch/types";
-import { ActivityStatusText, LaunchStatusPill } from "./status";
+import { InfoTip } from "./info-tip";
+import { DateChangedFlag, Pill, StatusBadge, StockAfterLaunchFlag } from "./status";
 
 // Some embedded previews drop client-side (RSC) navigations. If the soft navigation has not
 // landed shortly after a click, fall back to a normal page load, which always works.
@@ -20,10 +16,6 @@ function scheduleHardNavigationFallback(href: string) {
   window.setTimeout(() => {
     if (window.location.pathname !== href) window.location.assign(href);
   }, 1200);
-}
-
-function missingCount(product: Product): number {
-  return getMissingInformation(product).length;
 }
 
 export function ProductsTable({ products, caption }: { products: Product[]; caption: string }) {
@@ -35,19 +27,23 @@ export function ProductsTable({ products, caption }: { products: Product[]; capt
         <caption className="sr-only">{caption}</caption>
         <TableHeader>
           <TableRow>
+            <TableHead className="whitespace-nowrap">Cat No.</TableHead>
             <TableHead>Product</TableHead>
-            <TableHead>Category</TableHead>
-            <TableHead className="whitespace-nowrap">Launch date</TableHead>
-            <TableHead>Imagery</TableHead>
-            <TableHead>Content</TableHead>
-            <TableHead>Variants</TableHead>
-            <TableHead>Compliance</TableHead>
+            <TableHead className="whitespace-nowrap">PIM Date</TableHead>
+            <TableHead>Stock Ready Date</TableHead>
+            <TableHead>Proposed Launch Date</TableHead>
+            <TableHead>SLA Projection Date</TableHead>
+            <TableHead>Additional Checks</TableHead>
             <TableHead>Status</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {products.map((product) => {
-            const summary = summariseReadiness(product);
+            const assessment = assessProduct(product);
+            const projection = slaProjectionDate(product);
+            const hasChecks =
+              assessment.isPreparing &&
+              (assessment.flags.dateChanged || assessment.flags.stockAfterLaunch || assessment.flags.dataErrors);
             const href = `/products/${product.id}`;
             return (
               <TableRow
@@ -59,10 +55,11 @@ export function ProductsTable({ products, caption }: { products: Product[]; capt
                   scheduleHardNavigationFallback(href);
                 }}
               >
-                <TableCell className="max-w-48 align-middle whitespace-normal">
+                <TableCell className="align-middle text-muted-foreground tabular-nums">{product.id}</TableCell>
+                <TableCell className="max-w-56 align-middle whitespace-normal">
                   <Link
                     href={href}
-                    className="font-medium text-primary underline-offset-4 hover:underline"
+                    className="line-clamp-2 font-medium text-primary underline-offset-4 hover:underline"
                     onClick={(event) => {
                       if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
                       scheduleHardNavigationFallback(href);
@@ -70,35 +67,60 @@ export function ProductsTable({ products, caption }: { products: Product[]; capt
                   >
                     {product.name}
                   </Link>
-                  <p className="text-xs text-muted-foreground">ID {product.id}</p>
+                  <span className="mt-1 inline-block rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                    {product.brand}
+                  </span>
                 </TableCell>
-                <TableCell className="max-w-24 align-middle whitespace-normal">{product.category}</TableCell>
+                <TableCell className="align-middle whitespace-nowrap">
+                  {product.pimDate ? formatShortDate(product.pimDate) : <span className="text-xs text-muted-foreground">Not received</span>}
+                </TableCell>
+                <TableCell className="align-middle whitespace-nowrap">
+                  {product.stockLandsDate ? (
+                    formatShortDate(product.stockLandsDate)
+                  ) : (
+                    <span className="text-xs text-muted-foreground">Not known</span>
+                  )}
+                </TableCell>
                 <TableCell className="align-middle">
                   <span className="whitespace-nowrap">{formatShortDate(product.launchDate)}</span>
-                  <p className="text-xs text-muted-foreground">{describeDaysToLaunch(summary.daysToLaunch)}</p>
+                  {assessment.isPreparing ? (
+                    <p className="text-xs text-muted-foreground">{describeLaunchIn(assessment.launchInWorkingDays)}</p>
+                  ) : null}
                 </TableCell>
-                {[
-                  resolveImagery(product),
-                  resolveActivity(product, "product-content"),
-                  resolveActivity(product, "variants"),
-                  resolveActivity(product, "compliance"),
-                ].map((activity) => (
-                  <TableCell key={activity.def.key} className="align-middle whitespace-nowrap">
-                    {summary.isPreparing ? (
-                      <ActivityStatusText status={activity.status} />
-                    ) : (
-                      <span className="text-xs text-muted-foreground">Not applicable</span>
-                    )}
-                  </TableCell>
-                ))}
+                <TableCell className="align-middle whitespace-nowrap">
+                  {assessment.isPreparing && projection ? (
+                    <span
+                      className="inline-flex items-center gap-1"
+                      title={`SLA length used: ${describeSla(assessment.slaWorkingDays)}`}
+                    >
+                      {formatShortDate(projection)}
+                      <InfoTip
+                        label="SLA length"
+                        message={`SLA length used: ${describeSla(assessment.slaWorkingDays)}`}
+                      />
+                    </span>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">
+                      {assessment.isPreparing ? "Not started" : "Not applicable"}
+                    </span>
+                  )}
+                </TableCell>
+                <TableCell className="align-middle whitespace-normal">
+                  {hasChecks ? (
+                    <div className="flex flex-col items-start gap-1">
+                      {assessment.flags.dateChanged ? <DateChangedFlag /> : null}
+                      {assessment.flags.stockAfterLaunch ? <StockAfterLaunchFlag /> : null}
+                      {assessment.flags.dataErrors ? <Pill tone="danger">Data error</Pill> : null}
+                    </div>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">None</span>
+                  )}
+                </TableCell>
                 <TableCell className="align-middle whitespace-nowrap">
                   <div className="flex flex-col items-start gap-1">
-                    <LaunchStatusPill status={summary.launchStatus} />
-                    {missingCount(product) > 0 ? (
-                      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                        <TriangleAlert className="size-3.5" aria-hidden />
-                        {missingCount(product)} information missing
-                      </span>
+                    <StatusBadge assessment={assessment} />
+                    {assessment.isPreparing && assessment.status === "Information Incomplete" ? (
+                      <span className="text-xs text-muted-foreground">{assessment.completeness.summary}</span>
                     ) : null}
                   </div>
                 </TableCell>

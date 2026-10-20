@@ -14,9 +14,8 @@ export const NOTE_AUTHORS: Record<NoteRole, string> = {
   downstream: "Daniel Okafor",
 };
 
-/** Editors are the commercial team; viewers are the downstream teams who can read product fields only. */
 export function noteRoleFor(role: Role): NoteRole {
-  return role === "editor" ? "commercial" : "downstream";
+  return role;
 }
 
 export type NoteValidation = { ok: true; text: string } | { ok: false; reason: "empty" | "too-long" };

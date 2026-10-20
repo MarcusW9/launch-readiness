@@ -18,19 +18,20 @@ describe("useSession", () => {
     expect(result.current.session).toBe(DEMO_SESSION);
   });
 
-  it("answers permission questions for an editor", () => {
+  it("answers permission questions for the downstream team", () => {
     const { result } = renderHook(() => useSession(), { wrapper: wrapperFor(DEMO_SESSION) });
 
     expect(result.current.can("demo:reset")).toBe(true);
-    expect(result.current.can("activity:update")).toBe(true);
+    expect(result.current.can("product:edit")).toBe(false);
+    expect(result.current.can("reminder:send")).toBe(true);
   });
 
-  it("answers permission questions for a viewer", () => {
-    const viewer: Session = { user: { ...DEMO_SESSION.user, role: "viewer" } };
+  it("answers permission questions for Commercial / Range Planning", () => {
+    const viewer: Session = { user: { ...DEMO_SESSION.user, role: "commercial" } };
     const { result } = renderHook(() => useSession(), { wrapper: wrapperFor(viewer) });
 
     expect(result.current.can("product:view")).toBe(true);
-    expect(result.current.can("demo:reset")).toBe(false);
+    expect(result.current.can("product:edit")).toBe(true);
   });
 
   it("denies everything when nobody is signed in", () => {

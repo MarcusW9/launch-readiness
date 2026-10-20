@@ -9,7 +9,10 @@ import { Toaster } from "@/components/launch/toaster";
 import { Button } from "@/components/ui/button";
 import type { Session } from "@/lib/auth";
 import { SessionProvider, useSession } from "@/lib/auth/session-context";
-import { DEMO_TODAY, formatLongDate, needsAttention } from "@/lib/launch/readiness";
+import { RemindCommercial } from "@/components/launch/remind-commercial";
+import { RoleSwitcher } from "@/components/launch/role-switcher";
+import { DEMO_TODAY, formatLongDate } from "@/lib/launch/readiness";
+import { assessProduct } from "@/lib/launch/readiness-model";
 import { NotificationsProvider, useNotifications } from "@/lib/launch/notifications";
 import { LaunchProvider, useLaunch } from "@/lib/launch/store";
 import type { Product } from "@/lib/launch/types";
@@ -60,8 +63,10 @@ function NavLink({ href, active, children }: { href: string; active: boolean; ch
 function Chrome({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { products } = useLaunch();
-  const { session } = useSession();
-  const actionCount = products.filter(needsAttention).length;
+  const actionCount = products.filter((product) => {
+    const assessment = assessProduct(product);
+    return assessment.isPreparing && assessment.status !== "On Track";
+  }).length;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -85,10 +90,9 @@ function Chrome({ children }: { children: ReactNode }) {
               How it works
             </NavLink>
           </nav>
-          <div className="ml-auto flex items-center gap-2">
-            {session ? (
-              <span className="hidden text-sm text-muted-foreground sm:inline">{session.user.name}</span>
-            ) : null}
+          <div className="flex w-full flex-wrap items-center gap-2 md:ml-auto md:w-auto">
+            <RemindCommercial />
+            <RoleSwitcher />
             <NotificationsMenu />
             <ThemeToggle />
           </div>

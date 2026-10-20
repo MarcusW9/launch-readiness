@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { SEED_PRODUCTS } from "./data";
 import { getProductTab } from "./filters";
-import { summariseReadiness } from "./readiness";
+import { assessProduct } from "./readiness-model";
 import {
   buildStudioCsv,
   displayValue,
@@ -37,7 +37,7 @@ const stool = makeProduct({
   launchDate: "2026-11-10",
   studio: { customerStylePreference: "Scandi", imageSource: "Supplier", videoSource: "#N/A" },
 });
-const bare = makeProduct({ id: "2000004", name: "Plain Shelf", launchDate: "2026-11-30" });
+const bare = makeProduct({ id: "2000004", name: "Plain Shelf", criticalPath: "#N/A", launchDate: "2026-11-30" });
 const launched = makeProduct({
   id: "2000005",
   name: "Live Rug",
@@ -185,8 +185,8 @@ describe("seed data", () => {
   it("does not let studio details change any status", () => {
     for (const product of active) {
       const { studio, ...withoutStudio } = product;
-      expect(summariseReadiness(product).launchStatus, studio ? product.id : "").toBe(
-        summariseReadiness(withoutStudio as typeof product).launchStatus,
+      expect(assessProduct(product).status, studio ? product.id : "").toBe(
+        assessProduct(withoutStudio as typeof product).status,
       );
     }
   });

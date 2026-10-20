@@ -1,44 +1,39 @@
-import { INFORMATION_DEFINITIONS, INFORMATION_ORDER } from "../information";
-import type {
-  ActivityKey,
-  ActivityState,
-  InformationKey,
-  Product,
-  ProductCharacteristics,
-} from "../types";
+import type { FieldKey } from "../readiness-config";
+import type { Product, ProductCharacteristics } from "../types";
 
-export function stateAt(stage: string, extra: Partial<ActivityState> = {}): ActivityState {
-  return { stage, blocked: false, notes: [], history: [], ...extra };
-}
-
-export function allInformation(product: Product): Product["information"] {
-  const information: Product["information"] = {};
-  for (const key of INFORMATION_ORDER) {
-    const definition = INFORMATION_DEFINITIONS[key];
-    information[key] = { value: definition.sampleValue(product), source: definition.defaultSource };
-  }
-  return information;
-}
-
-type ProductOverrides = Partial<Omit<Product, "characteristics" | "activities">> & {
+type ProductOverrides = Partial<Omit<Product, "characteristics">> & {
   characteristics?: Partial<ProductCharacteristics>;
-  activities?: Product["activities"];
+};
+
+/** Every mandatory field that does not already live on the product itself. */
+const COMPLETE_FIELDS: Partial<Record<FieldKey, string>> = {
+  productType: "Armchair",
+  channelA: "Y",
+  channelB: "N",
+  productFeatures: "Key features agreed",
+  supplierName: "Fictional Manufacturing Co.",
+  supplierContact: "Supplier account contact on file",
+  integration: "N",
 };
 
 /**
- * A fully prepared product by default: supplier imagery, no variants, no
- * compliance, every information item known and every applicable activity
- * complete. Tests override only what they care about.
+ * A complete, On Track product by default: every mandatory field present, information completed
+ * well before the demo date and a launch date far enough out for the SLA. Tests override only
+ * what they care about.
  */
 export function makeProduct(overrides: ProductOverrides = {}): Product {
-  const { characteristics, activities, information, ...rest } = overrides;
+  const { characteristics, fields, ...rest } = overrides;
 
-  const product: Product = {
+  return {
     id: "9000001",
     name: "Test Armchair",
     brand: "Oakline",
     category: "Furniture",
+    range: "Living room",
+    criticalPath: "AW26 PH1",
     launchDate: "2026-12-30",
+    pimDate: "2026-10-01",
+    infoCompleteAt: "2026-10-05",
     ...rest,
     characteristics: {
       imagerySource: "supplier",
@@ -46,29 +41,12 @@ export function makeProduct(overrides: ProductOverrides = {}): Product {
       ownBrand: false,
       ...characteristics,
     },
-    information: {},
-    activities: {
-      "product-setup": stateAt("complete"),
-      "product-content": stateAt("complete"),
-      "supplier-imagery": stateAt("complete"),
-      ...activities,
-    },
+    fields: { ...COMPLETE_FIELDS, ...fields },
   };
-
-  product.information = information ?? allInformation(product);
-  return product;
 }
 
-export function withActivity(product: Product, key: ActivityKey, state: ActivityState): Product {
-  return { ...product, activities: { ...product.activities, [key]: state } };
-}
-
-export function withoutInformation(product: Product, ...keys: InformationKey[]): Product {
-  const information = { ...product.information };
-  for (const key of keys) delete information[key];
-  return { ...product, information };
-}
-
-export function withInformation(product: Product, key: InformationKey, value = "Provided in test"): Product {
-  return { ...product, information: { ...product.information, [key]: { value, source: "team" } } };
+/** The same product with the listed mandatory fields left blank. Information is then incomplete. */
+export function withMissingFields(product: Product, ...keys: FieldKey[]): Product {
+  const blanked = Object.fromEntries(keys.map((key) => [key, ""]));
+  return { ...product, infoCompleteAt: undefined, fields: { ...product.fields, ...blanked } };
 }

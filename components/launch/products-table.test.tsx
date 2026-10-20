@@ -12,8 +12,8 @@ vi.mock("next/navigation", () => ({
 }));
 
 const products = [
-  makeProduct({ id: "1000001", name: "Oat Cookies", category: "Bakery" }),
-  makeProduct({ id: "1000002", name: "Garden Chair", category: "Furniture" }),
+  makeProduct({ id: "1000001", name: "Oat Cookies", range: "Bakery" }),
+  makeProduct({ id: "1000002", name: "Garden Chair", range: "Furniture" }),
 ];
 
 describe("ProductsTable", () => {
@@ -32,18 +32,18 @@ describe("ProductsTable", () => {
     expect(screen.getByRole("table", { name: "All products" })).toBeInTheDocument();
     const headings = screen.getAllByRole("columnheader").map((heading) => heading.textContent);
     expect(headings).toEqual([
+      "Cat No.",
       "Product",
-      "Category",
-      "Launch date",
-      "Imagery",
-      "Content",
-      "Variants",
-      "Compliance",
+      "PIM Date",
+      "Stock Ready Date",
+      "Proposed Launch Date",
+      "SLA Projection Date",
+      "Additional Checks",
       "Status",
     ]);
   });
 
-  it("shows one row per product, with its name, ID and category", () => {
+  it("shows one row per product, with its Cat No., name and brand chip", () => {
     render(<ProductsTable products={products} caption="All products" />);
 
     const rows = screen.getAllByRole("row").slice(1);
@@ -51,8 +51,8 @@ describe("ProductsTable", () => {
 
     const first = within(rows[0]);
     expect(first.getByRole("link", { name: "Oat Cookies" })).toHaveAttribute("href", "/products/1000001");
-    expect(first.getByText("ID 1000001")).toBeInTheDocument();
-    expect(first.getByText("Bakery")).toBeInTheDocument();
+    expect(first.getByText("1000001")).toBeInTheDocument();
+    expect(first.getByText("Oakline")).toBeInTheDocument();
 
     expect(within(rows[1]).getByRole("link", { name: "Garden Chair" })).toHaveAttribute("href", "/products/1000002");
   });
@@ -73,7 +73,7 @@ describe("ProductsTable", () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     render(<ProductsTable products={products} caption="All products" />);
 
-    await user.click(screen.getByText("Furniture"));
+    await user.click(screen.getByText("1000002"));
 
     expect(push).toHaveBeenCalledExactlyOnceWith("/products/1000002");
   });

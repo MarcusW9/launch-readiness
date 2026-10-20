@@ -2,7 +2,7 @@
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { makeProduct, stateAt, withActivity, withoutInformation } from "@/lib/launch/testing/fixtures";
+import { makeProduct, withMissingFields } from "@/lib/launch/testing/fixtures";
 import { renderWithStore } from "@/lib/launch/testing/render";
 import { ProductsView } from "./products-view";
 
@@ -11,14 +11,13 @@ vi.mock("next/navigation", () => ({
 }));
 
 const armchair = makeProduct({ id: "1000001", name: "Oak Armchair", brand: "Oakline", category: "Furniture" });
-const lamp = withActivity(
+const lamp = withMissingFields(
   makeProduct({ id: "1000002", name: "Brass Lamp", brand: "Hearthwell", category: "Lighting", launchDate: "2026-11-15" }),
-  "product-content",
-  stateAt("in-progress"),
+  "supplierName",
 );
-const mystery = withoutInformation(
+const mystery = withMissingFields(
   makeProduct({ id: "1000003", name: "Mystery Stool", brand: "Oakline", category: "Furniture" }),
-  "supplier",
+  "supplierName",
 );
 
 function rowNames() {
@@ -56,7 +55,7 @@ describe("ProductsView", () => {
     expect(more).toHaveAttribute("aria-expanded", "false");
     await user.click(more);
     expect(more).toHaveAttribute("aria-expanded", "true");
-    for (const name of ["Category", "Status", "Launch date", "Outstanding work", "Information"]) {
+    for (const name of ["Category", "Status", "Launch date", "Flag"]) {
       expect(screen.getByRole("combobox", { name })).toBeInTheDocument();
     }
   });
@@ -123,7 +122,7 @@ describe("ProductsView", () => {
   });
 
   it("starts filtered when given initial filters, as when arriving from the Overview", () => {
-    renderWithStore(<ProductsView initialFilters={{ information: "missing" }} />, [armchair, mystery]);
+    renderWithStore(<ProductsView initialFilters={{ status: "Information Incomplete" }} />, [armchair, mystery]);
 
     expect(screen.getByText("Showing 1 of 2 active products")).toBeInTheDocument();
     expect(rowNames()).toEqual(["Mystery Stool"]);
@@ -152,7 +151,13 @@ describe("ProductsView range, critical path and tabs", () => {
     range: "Living room",
     criticalPath: "AW26 PH2",
   });
-  const planter = makeProduct({ id: "2000003", name: "Clay Planter", brand: "Hearthwell" });
+  const planter = makeProduct({
+    id: "2000003",
+    name: "Clay Planter",
+    brand: "Hearthwell",
+    range: undefined,
+    criticalPath: undefined,
+  });
   const launched = makeProduct({ id: "2000004", name: "Live Kettle", lifecycle: "Live", criticalPath: "AW26 PH1" });
   const dropped = makeProduct({ id: "2000005", name: "Old Toaster", lifecycle: "Dropped" });
   const catalogue = [sofa, rug, planter, launched, dropped];
@@ -235,7 +240,7 @@ describe("ProductsView range, critical path and tabs", () => {
 
     expect(screen.getByRole("tab", { name: "Active (1)" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Launched (1)" })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "Dropped (0)" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Dropped (1)" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("tab", { name: "Launched (1)" }));
     await user.click(screen.getByRole("button", { name: "Clear all filters" }));
@@ -244,8 +249,8 @@ describe("ProductsView range, critical path and tabs", () => {
     expect(screen.getByText("Showing 1 of 1 launched products")).toBeInTheDocument();
   });
 
-  it("opens on the tab that matches an incoming status filter", () => {
-    renderWithStore(<ProductsView initialFilters={{ readiness: "Dropped" }} />, catalogue);
+  it("opens on the tab it is given", () => {
+    renderWithStore(<ProductsView initialFilters={{ tab: "dropped" }} />, catalogue);
 
     expect(screen.getByRole("tab", { name: /^Dropped/ })).toHaveAttribute("aria-selected", "true");
     expect(rowNames()).toEqual(["Old Toaster"]);
@@ -253,11 +258,13 @@ describe("ProductsView range, critical path and tabs", () => {
 });
 
 describe("ProductsView critical path summary", () => {
-  const rushed = withActivity(
-    makeProduct({ id: "4000001", name: "Rushed Shelf", criticalPath: "AW26 PH1", launchDate: "2026-11-16" }),
-    "product-content",
-    stateAt("in-progress"),
-  );
+  const rushed = makeProduct({
+    id: "4000001",
+    name: "Rushed Shelf",
+    criticalPath: "AW26 PH1",
+    launchDate: "2026-11-16",
+    infoCompleteAt: "2026-11-10",
+  });
   const steady = makeProduct({ id: "4000002", name: "Steady Stool", criticalPath: "AW26 PH1", launchDate: "2026-11-16" });
   const later = makeProduct({ id: "4000003", name: "Later Desk", criticalPath: "AW26 PH1", launchDate: "2026-12-02" });
   const elsewhere = makeProduct({ id: "4000004", name: "Elsewhere Rack", criticalPath: "AW26 PH2", launchDate: "2026-11-24" });
@@ -288,10 +295,10 @@ describe("ProductsView critical path summary", () => {
     expect(within(region).getByText("AW26 PH1 · 3 active lines")).toBeInTheDocument();
     expect(within(region).getByText("16 Nov 2026")).toBeInTheDocument();
     expect(within(region).getByRole("group", { name: "At Risk: 1" })).toBeInTheDocument();
-    expect(within(region).getByRole("group", { name: "Action Required: 0" })).toBeInTheDocument();
-    expect(within(region).getByRole("group", { name: "Ready: 2" })).toBeInTheDocument();
-    expect(within(region).getByRole("group", { name: "Blocked: 0" })).toBeInTheDocument();
-    expect(within(region).getByRole("group", { name: "Missing information: 0" })).toBeInTheDocument();
+    expect(within(region).getByRole("group", { name: "Information Incomplete: 0" })).toBeInTheDocument();
+    expect(within(region).getByRole("group", { name: "On Track: 2" })).toBeInTheDocument();
+    expect(within(region).getByRole("group", { name: "Date Changed: 0" })).toBeInTheDocument();
+    expect(within(region).getByRole("group", { name: "Stock lands after launch: 0" })).toBeInTheDocument();
   });
 
   it("lists the other launch dates, with counts, on request", async () => {
@@ -331,7 +338,7 @@ describe("ProductsView critical path summary", () => {
 
   it("is hidden when the search spans several critical paths or the path is #N/A", async () => {
     const user = userEvent.setup();
-    renderWithStore(<ProductsView />, [...catalogue, makeProduct({ id: "4000005", name: "Plain Chair" })]);
+    renderWithStore(<ProductsView />, [...catalogue, makeProduct({ id: "4000005", name: "Plain Chair", criticalPath: undefined })]);
 
     await user.type(screen.getByRole("searchbox", { name: "Search products" }), "AW26");
     expect(screen.queryByRole("region", { name: /Critical path summary/ })).not.toBeInTheDocument();

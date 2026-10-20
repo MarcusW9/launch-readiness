@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { formatShortDate, summariseReadiness } from "@/lib/launch/readiness";
+import { formatShortDate } from "@/lib/launch/readiness";
+import { assessProduct } from "@/lib/launch/readiness-model";
 import {
   groupByStyle,
   isDataError,
@@ -10,7 +11,7 @@ import {
   type StudioColumn,
 } from "@/lib/launch/studio";
 import type { Product } from "@/lib/launch/types";
-import { LaunchStatusPill } from "./status";
+import { StatusBadge } from "./status";
 
 function StudioValue({ value }: { value: string | undefined }) {
   const text = value?.trim();
@@ -61,7 +62,7 @@ function StudioRow({ product }: { product: Product }) {
       ))}
       <TableCell className="align-middle whitespace-nowrap">{formatShortDate(product.launchDate)}</TableCell>
       <TableCell className="align-middle">
-        <LaunchStatusPill status={summariseReadiness(product).launchStatus} />
+        <StatusBadge assessment={assessProduct(product)} />
       </TableCell>
     </TableRow>
   );
