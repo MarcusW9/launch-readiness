@@ -3,7 +3,12 @@ import { ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Pill } from "@/components/launch/status";
 import { LATEST_RELEASE } from "@/lib/launch/guide-content";
-import { MANDATORY_FIELDS, SLA_CONFIG, WORKING_DAYS_LIMITATION } from "@/lib/launch/readiness-config";
+import {
+  DATE_CHANGED_WITHIN_DAYS,
+  MANDATORY_FIELDS,
+  SLA_CONFIG,
+  WORKING_DAYS_LIMITATION,
+} from "@/lib/launch/readiness-config";
 import { DownloadButton } from "./download-button";
 import { LinkButton } from "./link-button";
 import { SectionHeading } from "./page-frame";
@@ -123,6 +128,44 @@ export function ReadinessStatuses() {
   );
 }
 
+export function FlagsAndPlaceholders() {
+  return (
+    <Section
+      id="flags"
+      title="Flags and placeholders"
+      intro="Flags sit beside the status without changing it. Placeholders are numbers and rules that have not been agreed yet."
+    >
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <InfoCard title="Flags">
+          <p>
+            <strong>Date Changed</strong> marks a product whose Proposed Launch Date moved in the last{" "}
+            {DATE_CHANGED_WITHIN_DAYS} days.
+          </p>
+          <p>
+            <strong>Stock lands after launch</strong> marks a product whose Stock Ready Date is later than its
+            Proposed Launch Date.
+          </p>
+          <p>
+            Flags show as smaller cards on the Overview and as Additional Checks on Products. They never change the
+            status, the completeness or the SLA.
+          </p>
+        </InfoCard>
+        <InfoCard title="Placeholders">
+          <p>
+            The SLA length ({SLA_CONFIG.defaultWorkingDays} working days, 25 for a Guest bed) is labelled{" "}
+            {SLA_CONFIG.label.toLowerCase()} wherever it appears, because the real figure has not been agreed.
+          </p>
+          <p>
+            Working days are Monday to Friday and bank holidays are ignored, so a projection can be a day or more
+            optimistic than real life. The demo date is fixed at 10 Nov 2026, and every product, ID and name is
+            fictional.
+          </p>
+        </InfoCard>
+      </div>
+    </Section>
+  );
+}
+
 export function SlaGuide() {
   return (
     <Section
@@ -176,6 +219,27 @@ export function Walkthrough() {
           Start with Action Required
           <ChevronRight aria-hidden />
         </LinkButton>
+      </div>
+    </Section>
+  );
+}
+
+export function HowTheThinkingChanged() {
+  return (
+    <Section id="thinking" title="How the thinking changed">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <InfoCard title="Version 1">
+          <p>Modelled each team&apos;s workflow as a set of activities that had to be started and finished.</p>
+        </InfoCard>
+        <InfoCard title="Version 3">
+          <p>
+            Discovery showed that downstream teams track their work in their own systems. The model moved to
+            information completeness and SLA risk.
+          </p>
+        </InfoCard>
+        <InfoCard title="Version 4">
+          <p>Added changes from a show-and-tell with the teams who would use it.</p>
+        </InfoCard>
       </div>
     </Section>
   );

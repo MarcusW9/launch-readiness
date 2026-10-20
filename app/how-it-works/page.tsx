@@ -15,6 +15,8 @@ import {
   WhatsNewInLatest,
 } from "@/components/launch/guide-sections";
 import {
+  FlagsAndPlaceholders,
+  HowTheThinkingChanged,
   SlaGuide,
   Limits,
   ReadinessStatuses,
@@ -53,6 +55,7 @@ export default function HowItWorksPage() {
       <WhatItIs />
       <TheModel />
       <ReadinessStatuses />
+      <FlagsAndPlaceholders />
       <PageAnatomy />
       <OverviewTour />
       <ProductsTour />
@@ -64,6 +67,7 @@ export default function HowItWorksPage() {
       <Walkthrough />
       <UnderTheHood />
       <TestsGuide />
+      <HowTheThinkingChanged />
       <Limits />
       <ChangelogHistory />
     </Page>

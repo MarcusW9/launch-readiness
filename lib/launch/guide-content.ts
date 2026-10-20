@@ -40,8 +40,9 @@ export const CHANGELOG_FILE_NAME = LATEST_RELEASE.fileName;
 export const GUIDE_CONTENTS = [
   { id: "whats-new", label: "What is new in version 4" },
   { id: "what-it-is", label: "What launch readiness is" },
-  { id: "the-model", label: "The idea in six steps" },
+  { id: "the-model", label: "The idea in three steps" },
   { id: "readiness", label: "What the statuses mean" },
+  { id: "flags", label: "Flags and placeholders" },
   { id: "page-layout", label: "How every page is laid out" },
   { id: "overview-screen", label: "Screen 1: Overview" },
   { id: "products-screen", label: "Screen 2: Products" },
@@ -53,6 +54,7 @@ export const GUIDE_CONTENTS = [
   { id: "try-it", label: "Try it in five minutes" },
   { id: "under-the-hood", label: "Under the hood" },
   { id: "tests", label: "How we know it works" },
+  { id: "thinking", label: "How the thinking changed" },
   { id: "limits", label: "What to keep in mind" },
   { id: "changelog-history", label: "Change log history" },
 ] as const;
