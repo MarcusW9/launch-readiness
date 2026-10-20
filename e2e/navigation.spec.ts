@@ -29,9 +29,9 @@ test.describe("navigation", () => {
     await expect(page.getByRole("heading", { level: 1, name: "Action Required" })).toBeVisible();
   });
 
-  test("shows a not found message for an unknown activity", async ({ page }) => {
-    await page.goto("/products/5678901/activities/does-not-exist");
+  test("has no activity pages any more", async ({ page }) => {
+    const response = await page.goto("/products/5678901/activities/does-not-exist");
 
-    await expect(page.getByRole("heading", { level: 1, name: "Activity not found" })).toBeVisible();
+    expect(response?.status()).toBe(404);
   });
 });

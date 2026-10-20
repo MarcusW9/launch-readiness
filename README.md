@@ -11,23 +11,22 @@ Everything in this repository is a prototype. All products, IDs and statuses are
 ## The idea
 
 ```
-Product -> Requirements -> Information -> Work state -> Action -> Ready
+Mandatory information -> SLA starts -> SLA Projection Date -> compared with the Proposed Launch Date
 ```
 
-1. A product's characteristics decide which of six activities it needs (Product Setup, Variants, Studio Imagery, Supplier Imagery, Product Content, Compliance).
-2. Each activity lists the information it needs. Existing product data is never asked for again, only genuinely missing items.
-3. An activity is Not Required, Unable to start, Ready to start, In Progress, Blocked or Complete.
-4. If anything required is outstanding the product needs action. When every required activity is complete it is Ready. Outstanding work within 10 days of launch makes it At Risk (a placeholder rule, not yet agreed).
+1. A product has a set of mandatory information fields. Until they are all complete the SLA has not started.
+2. When the last mandatory field is complete the SLA starts. Its length is in working days (20 by default, 25 for a Guest bed; a placeholder, not yet agreed).
+3. The SLA Projection Date is the start date plus the SLA working days.
+4. The status follows from that: **On Track** when the projection is on or before the launch date, **Information Incomplete** while mandatory information is missing, and **Expectation At Risk** when the projection falls after the launch date.
 
 ## Screens
 
 | Route | Purpose |
 | --- | --- |
-| `/` | Overview: four summary cards (Total, Ready, Action Required, At Risk), attention notices, most urgent launches |
-| `/products` | Every product, with search and five filters (category, status, launch date, outstanding work, information) |
-| `/action-required` | Products that are not ready, grouped and ordered by urgency, with the work holding each back |
-| `/products/[id]` | One product: blockers, available and missing information (provide in place), requirements, summary and progress |
-| `/products/[id]/activities/[activity]` | One activity: workflow, next action, information needed, brief, notes and history |
+| `/` | Overview: three status cards (At Risk, Information Incomplete, On Track) that add up to the active total, plus the flagged counts |
+| `/products` | Every product, with search, Range, Brand and Critical Path filters, tabs and the Studio view |
+| `/action-required` | The exceptions only: Expectation At Risk and Information Incomplete, ordered by urgency |
+| `/products/[id]` | One product: a banner explaining the cause, the date timeline, field sections (mandatory fields tagged when missing) and the notes log |
 | `/how-it-works` | Screen-by-screen guide with screenshots, plus the latest change log download and an expandable history of past versions |
 | `/about` | About this prototype |
 
@@ -35,6 +34,10 @@ Product -> Requirements -> Information -> Work state -> Action -> Ready
 
 ### Delivered in v4 (in progress)
 
+- Restored SLA model: three statuses (On Track, Information Incomplete, Expectation At Risk) calculated from the mandatory information, the SLA working days and the Proposed Launch Date. The activity pages and workflow are removed.
+- Products table: Cat No., Product, PIM Date, Stock Ready Date, Proposed Launch Date (with launch in working days), SLA Projection Date, Additional Checks and one status badge per row. Summary cards are clickable filters, with Date Changed and Stock lands after launch shown as smaller flagged cards.
+- Product page timeline and field sections: Product identity open by default, Photography collapsed and marked not mandatory.
+- Two simulated roles in the header: Downstream team (read-only, default) and Commercial / Range Planning (can edit fields and the Proposed Launch Date). Downstream can remind Commercial about incomplete products, and moving a launch date notifies Downstream (both simulated).
 - Products filter bar: search, Range, Brand and Critical Path. Search also finds products by critical path.
 - Active, Launched and Dropped tabs with counts that respect the other filters. The earlier detailed filters sit behind a More filters button.
 - Every demo product has a range and, for most, a critical path.
@@ -51,7 +54,7 @@ Product -> Requirements -> Information -> Work state -> Action -> Ready
 - Documentation checks: a test compares this README, the How it works guide and the change logs with the real project.
 - Wording fix: Overview now says "1 product needs your attention" for a single product.
 - Change log history: the How it works page leads with the latest change log, and earlier versions are collapsed into an expandable history, each still downloadable.
-- 672 automated tests across 42 test files, plus 8 browser tests (run on desktop and mobile) covering navigation, providing information and the activity workflow.
+- 428 automated tests across 34 test files, plus 8 browser tests (run on desktop and mobile) covering navigation, providing information and the activity workflow.
 
 ### Delivered in v3
 
@@ -62,13 +65,13 @@ Product -> Requirements -> Information -> Work state -> Action -> Ready
 - Asynchronous product repository as the single data seam.
 - Session and permissions architecture with a built-in demo user. There is deliberately no sign-in screen.
 - A full How it works guide with eight screenshots and a downloadable Markdown change log.
-- 191 automated tests across 10 test files at release (now 672 across 42, see above).
+- 191 automated tests across 10 test files at release (now 428 across 34, see above).
 
 ### Behaviour worth knowing
 
-- Changes (providing information, moving work, blocking, notes) last for the session only. Refresh or **Reset demo data** restores the starting state.
+- Changes (editing fields, moving a launch date, notes) last for the session only. Refresh or **Reset demo data** restores the starting state.
 - Colour is never the only signal. Every status pill has an icon and a word.
-- Overview counts always add up: Total Products equals Ready plus Action Required plus At Risk.
+- Overview counts always add up: the three status cards (At Risk, Information Incomplete, On Track) sum to the active total.
 
 ## Architecture
 
@@ -76,7 +79,7 @@ Product -> Requirements -> Information -> Work state -> Action -> Ready
 app/                    Next.js App Router pages (server components load data and session)
 components/launch/      Screen components and shared building blocks
 components/ui/          shadcn/ui primitives
-lib/launch/             Pure business rules: readiness, activities, information, filters, copy, reducer
+lib/launch/             Pure business rules: readiness, SLA, completeness, filters, copy, reducer
 lib/launch/data.ts      Fictional demo products
 lib/launch/product-repository.ts   Async data seam (the only place real data would connect)
 lib/auth/               Session types, permissions, mock provider, React session context
@@ -114,51 +117,43 @@ pnpm dev        # http://localhost:3000
 
 ## Tests
 
-**672 tests across 42 test files, all passing, in a few seconds.** Business rules are tested as plain functions; components are tested the way a person uses them (by role, label and visible text) with Testing Library in jsdom.
+**428 tests across 34 test files, all passing, in a few seconds.** Business rules are tested as plain functions; components are tested the way a person uses them (by role, label and visible text) with Testing Library in jsdom.
 
 | File | Tests | Protects |
 | --- | ---: | --- |
-| `lib/launch/readiness.test.ts` | 31 | Ready, Action Required and At Risk, the 10-day rule, lifecycle products and the needs-attention count. |
+| `lib/launch/readiness.test.ts` | 11 | Ready, Action Required and At Risk, the 10-day rule, lifecycle products and the needs-attention count. |
 | `lib/launch/working-days.test.ts` | 13 | Working day arithmetic: weekends skipped forwards and backwards, 20 and 25 day spans, the gap between two dates, and singular and plural wording. |
 | `lib/launch/completeness.test.ts` | 20 | The 31 information fields and 13 mandatory ones: what counts as missing, N/A only in optional fields, data errors shown once, and optional fields never blocking completeness. |
 | `lib/launch/sla.test.ts` | 9 | The placeholder SLA: 20 working days by default, 25 for a Guest bed, the completion date and the projection date. |
 | `lib/launch/readiness-model.test.ts` | 35 | The three readiness statuses, info needed by and passed deadlines, launch in working days, the three flags, the default sort, and that the seed data covers every case. |
-| `lib/launch/activities.test.ts` | 31 | Which activities apply to which product, the reason shown, work states and workflow stages. |
-| `lib/launch/filters.test.ts` | 26 | Search, category, status, launch window, outstanding work and information filters, alone and combined. |
+| `lib/launch/filters.test.ts` | 15 | Search, category, status, launch window, outstanding work and information filters, alone and combined. |
+| `lib/launch/store-reducer.test.ts` | 10 | Providing information, moving work, blocking and clearing, notes, history and reset, and the permanent product notes log (newest first, trimmed, empty notes ignored, restored by reset). |
+| `lib/launch/store.test.tsx` | 8 | The in-memory store as components use it: each action reaches the right product, reset restores the demo data, and using it outside the provider fails loudly. |
+| `lib/launch/seed-scenarios.integration.test.ts` | 27 | Every demo product resolves correctly and every view agrees with every other view. |
 | `lib/launch/critical-path.test.ts` | 11 | The critical path summary: when one path counts as selected (filter or search), its active lines, own status and flagged counts, and the main and other launch dates. |
-| `lib/launch/information.test.ts` | 37 | Every information item, who owns it, what it unlocks and the wording of each missing-information issue. |
-| `lib/launch/information-overview.test.ts` | 15 | Available, missing and not-required information, and the counts shown on the Overview. |
-| `lib/launch/next-action.test.ts` | 17 | The single next step offered for each product, in priority order, including blocked and unable-to-start work. |
-| `lib/launch/copy.test.ts` | 10 | The wording used for headings and labels, so messages stay consistent across screens. |
-| `lib/launch/store-reducer.test.ts` | 20 | Providing information, moving work, blocking and clearing, notes, history and reset, and the permanent product notes log (newest first, trimmed, empty notes ignored, restored by reset). |
-| `lib/launch/store.test.tsx` | 12 | The in-memory store as components use it: each action reaches the right product, reset restores the demo data, and using it outside the provider fails loudly. |
-| `lib/launch/launch-journey.integration.test.ts` | 13 | Whole journeys: providing information unlocks work, advancing work completes a product, and the calendar. |
-| `lib/launch/seed-scenarios.integration.test.ts` | 39 | Every demo product resolves correctly and every view agrees with every other view. |
 | `lib/launch/studio.test.ts` | 18 | The Studio view rules: Active products only, search and filters, Not provided and data errors, grouping by style, the CSV contents and file name, and that studio details never change a status. |
-| `lib/launch/weekly-summary.test.ts` | 16 | The weekly summary rules: working days, scope (critical path filter or matching search, status card ignored), the headline counts, At Risk and information-needed lists, date changes, stock after launch, the plain-text version, and that no status changes. |
+| `lib/launch/weekly-summary.test.ts` | 17 | The weekly summary rules: working days, scope (critical path filter or matching search, status card ignored), the three headline counts, At Risk and information-needed lists, date changes, stock after launch, the plain-text version, and that no status changes. |
 | `lib/launch/product-notes.test.ts` | 6 | The note rules: the 500-character limit, empty notes refused, role labels, simulated authors and newest-first order. |
 | `lib/launch/seed-notes.test.ts` | 6 | The seed notes: which Active products have them, weekday dates on or before 10 Nov 2026, and that notes never change a status. |
 | `lib/launch/product-repository.test.ts` | 5 | The data seam: listing, looking up by ID and handling an unknown ID. |
-| `lib/launch/docs-consistency.test.ts` | 19 | That this list, the README, every change log release, the screenshots and the product IDs in the guide match the project. |
-| `lib/auth/auth.test.ts` | 18 | The demo session, roles and the permission checks behind the Reset demo data button and adding product notes. |
+| `lib/launch/docs-consistency.test.ts` | 18 | That this list, the README, every change log release, the screenshots and the product IDs in the guide match the project. |
+| `lib/auth/auth.test.ts` | 20 | The demo session, roles and the permission checks behind the Reset demo data button and adding product notes. |
 | `lib/auth/session-context.test.tsx` | 6 | How components read the session and permissions, and that using it outside the provider fails loudly. |
-| `components/launch/status.test.tsx` | 22 | Every readiness, lifecycle, activity and work-state pill says its status in words, including Unable to start. |
+| `components/launch/status.test.tsx` | 6 | Every readiness, lifecycle, activity and work-state pill says its status in words, including Unable to start. |
 | `components/launch/products-table.test.tsx` | 6 | The Products table: columns, one row per product, links, status words and whole-row clicks. |
 | `components/launch/theme-toggle.test.tsx` | 5 | The dark mode toggle: its label, both directions, keyboard use and the unresolved-theme case. |
 | `components/launch/download-button.test.tsx` | 4 | The download links on How it works, including the real change log link. |
 | `components/launch/guide-figure.test.tsx` | 8 | Guide screenshots: captions, the scroll frame for tall pages and the top-to-bottom lists. |
-| `components/launch/overview-view.test.tsx` | 12 | The Overview screen: summary cards, singular and plural wording, launched products and the links into filtered lists. |
+| `components/launch/overview-view.test.tsx` | 10 | The Overview screen: summary cards, singular and plural wording, launched products and the links into filtered lists. |
 | `components/launch/products-view.test.tsx` | 25 | The Products screen: urgency order, search, Range, Brand and Critical Path filters, the Active, Launched and Dropped tabs, the critical path summary, the no-results state and clearing filters. |
-| `components/launch/action-required-view.test.tsx` | 9 | The Action Required screen: At Risk before Action Required, group counts, ordering by launch date and links to each activity. |
-| `components/launch/product-detail-view.test.tsx` | 18 | The Product page: readiness banner, summary, progress and the Provide information form from open to saved. |
+| `components/launch/action-required-view.test.tsx` | 10 | The Action Required screen: At Risk before Action Required, group counts, ordering by launch date and links to each activity. |
+| `components/launch/product-detail-view.test.tsx` | 11 | The Product page: readiness banner, summary, progress and the Provide information form from open to saved. |
 | `components/launch/product-notes.test.tsx` | 11 | The Notes section on the Product page: title and count, newest first, adding as each role, the character count, the permanent-log caption and its place above the information sections. |
 | `components/launch/studio-view.test.tsx` | 17 | The Studio view on Products: the view switch in both roles, the Studio columns, filters with chips and Clear all, Group by style, the critical path strip without status cards, and the CSV export. |
-| `components/launch/weekly-summary-dialog.test.tsx` | 6 | The weekly summary preview: the button in both roles, subject and headline, linked Cat Nos, on track as a count only, Copy text, and the simulated send with its toast and notification. |
-| `components/launch/activity-detail-view.test.tsx` | 28 | The Activity page: moving through stages, blockers, cannot-start warnings, notes, history and the studio brief. |
+| `components/launch/weekly-summary-dialog.test.tsx` | 6 | The weekly summary preview: the button in both roles, the subject and headline, linked Cat Nos, on track as a count only, Copy text, and the simulated send with its toast and notification. |
 | `components/launch/guide-sections.test.tsx` | 12 | The What is new section and the collapsible change log history: archived versions start closed, open on click and download their own file. |
-| `components/launch/app-shell.test.tsx` | 24 | The app shell: primary and footer navigation, the current-page marker, the live Action Required count, the prototype strip and who can reset the demo data. |
-| `components/launch/how-it-works-sections.test.tsx` | 18 | The How it works sections: the walkthrough content, contents links, the readiness and activity references and the glossary. |
-| `components/launch/steps.test.tsx` | 6 | The numbered Steps list: order, numbering and the step text shown in the walkthrough. |
+| `components/launch/app-shell.test.tsx` | 22 | The app shell: primary and footer navigation, the current-page marker, the live Action Required count, the prototype strip and who can reset the demo data. |
+| `components/launch/how-it-works-sections.test.tsx` | 12 | The How it works sections: the walkthrough content, contents links, the readiness and activity references and the glossary. |
 | `app/how-it-works/page.test.tsx` | 8 | The whole How it works page: metadata, every contents entry pointing at a real section, the downloads and the change log history. |
 
 Coverage of the business rules and auth (`lib/**`) is about 99 percent of statements, 99 percent of branches and 100 percent of functions. `vitest.config.mts` fails the run if `lib/**` drops below 95 percent statements, 90 percent branches, 95 percent functions or 95 percent lines.

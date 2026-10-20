@@ -94,7 +94,7 @@ describe("view switch", () => {
 
   it("is available to the Downstream team too and does not touch edit rights", async () => {
     const user = userEvent.setup();
-    renderWithStore(<ProductsView />, [sofa], { user: { ...DEMO_SESSION.user, role: "viewer" } });
+    renderWithStore(<ProductsView />, [sofa], { user: { ...DEMO_SESSION.user, role: "downstream" } });
 
     await user.click(screen.getByRole("button", { name: "Studio view" }));
 

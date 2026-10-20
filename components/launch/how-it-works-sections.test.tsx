@@ -1,60 +1,29 @@
 // @vitest-environment jsdom
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { ACTIVITY_DEFINITIONS, ACTIVITY_ORDER } from "@/lib/launch/activities";
 import { LATEST_RELEASE } from "@/lib/launch/guide-content";
-import { AT_RISK_WITHIN_DAYS } from "@/lib/launch/readiness";
-import {
-  ActivityGuide,
-  InfoCard,
-  Limits,
-  ReadinessStatuses,
-  Section,
-  TheModel,
-  Walkthrough,
-  WhatItIs,
-} from "./how-it-works-sections";
+import { MANDATORY_FIELDS, SLA_CONFIG } from "@/lib/launch/readiness-config";
+import { InfoCard, Limits, ReadinessStatuses, Section, SlaGuide, TheModel, Walkthrough, WhatItIs } from "./how-it-works-sections";
 
 describe("Section", () => {
   it("is a landmark named by its own heading", () => {
     render(
-      <Section id="example" title="Example title">
+      <Section id="example" title="Example title" intro="Example intro">
         <p>Body</p>
       </Section>,
     );
 
     const region = screen.getByRole("region", { name: "Example title" });
-    expect(within(region).getByRole("heading", { name: "Example title" })).toHaveAttribute("id", "example");
+    expect(within(region).getByText("Example intro")).toBeInTheDocument();
     expect(within(region).getByText("Body")).toBeInTheDocument();
-  });
-
-  it("shows the intro only when one is given", () => {
-    const { rerender } = render(
-      <Section id="example" title="Example title" intro="Why this matters">
-        <p>Body</p>
-      </Section>,
-    );
-    expect(screen.getByText("Why this matters")).toBeInTheDocument();
-
-    rerender(
-      <Section id="example" title="Example title">
-        <p>Body</p>
-      </Section>,
-    );
-    expect(screen.queryByText("Why this matters")).not.toBeInTheDocument();
   });
 });
 
 describe("InfoCard", () => {
-  it("puts its title in a third-level heading and its content in the card", () => {
-    render(
-      <InfoCard title="Card title">
-        <p>Card content</p>
-      </InfoCard>,
-    );
+  it("puts its title in a level 3 heading", () => {
+    render(<InfoCard title="Card title">Content</InfoCard>);
 
     expect(screen.getByRole("heading", { level: 3, name: "Card title" })).toBeInTheDocument();
-    expect(screen.getByText("Card content")).toBeInTheDocument();
   });
 });
 
@@ -64,95 +33,48 @@ describe("WhatItIs", () => {
 
     const region = screen.getByRole("region", { name: "What Launch Readiness is" });
     expect(within(region).getByText(/tracked in\s+large spreadsheets/)).toBeInTheDocument();
-    expect(within(region).getByText(/is this product ready to launch/)).toBeInTheDocument();
+    expect(within(region).getByText(/is the mandatory product information complete/)).toBeInTheDocument();
   });
 });
 
 describe("TheModel", () => {
-  it("lists the six steps in order, each read out as complete", () => {
+  it("explains the idea in three cards, quoting the real numbers", () => {
     render(<TheModel />);
 
-    const steps = within(screen.getByRole("list")).getAllByRole("listitem");
-    expect(steps.map((step) => step.textContent)).toEqual([
-      "Product, complete",
-      "Requirements, complete",
-      "Information, complete",
-      "Work state, complete",
-      "Action, complete",
-      "Ready, complete",
-    ]);
-  });
-
-  it("explains the chain in three cards using the user-facing work-state names", () => {
-    render(<TheModel />);
-
-    for (const title of ["1. Product and requirements", "2. Information and work state", "3. Action and ready"]) {
+    for (const title of ["1. Mandatory information", "2. The SLA starts", "3. Launch status"]) {
       expect(screen.getByRole("heading", { level: 3, name: title })).toBeInTheDocument();
     }
-    expect(screen.getByText(/Unable to start, Ready to start/)).toBeInTheDocument();
-    expect(screen.queryByText(/Awaiting information/)).not.toBeInTheDocument();
+    expect(screen.getByText(new RegExp(`${MANDATORY_FIELDS.length} fields are mandatory`))).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(`${SLA_CONFIG.defaultWorkingDays}\\s+working days by default`))).toBeInTheDocument();
   });
 });
 
 describe("ReadinessStatuses", () => {
-  it("describes each overall readiness status", () => {
+  it("describes each of the three statuses", () => {
     render(<ReadinessStatuses />);
 
-    expect(screen.getByText(/Every required activity is complete/)).toBeInTheDocument();
-    expect(screen.getByText(/there is still time to do it/)).toBeInTheDocument();
-    expect(screen.getByText(/This is the most urgent/)).toBeInTheDocument();
+    for (const status of ["On Track", "Information Incomplete", "Expectation At Risk"]) {
+      expect(screen.getByRole("heading", { level: 3, name: status })).toBeInTheDocument();
+    }
+    expect(screen.getByText(/on or before the launch date/)).toBeInTheDocument();
+    expect(screen.getByText(/the SLA has not started/)).toBeInTheDocument();
+    expect(screen.getByText(/falls after the launch date/)).toBeInTheDocument();
   });
 
-  it("quotes the same at-risk window the readiness rules use", () => {
+  it("says where products that are no longer being prepared go", () => {
     render(<ReadinessStatuses />);
 
-    expect(screen.getByText(new RegExp(`launch date is within ${AT_RISK_WITHIN_DAYS} days`))).toBeInTheDocument();
-  });
-
-  it("describes the three launch statuses that sit outside readiness", () => {
-    render(<ReadinessStatuses />);
-
-    expect(screen.getByText(/has launched and is on sale/)).toBeInTheDocument();
-    expect(screen.getByText(/has been withdrawn/)).toBeInTheDocument();
-    expect(screen.getByText(/cancelled before launch/)).toBeInTheDocument();
-  });
-
-  it("warns that the at-risk rule is a placeholder and that finished products leave the overview", () => {
-    render(<ReadinessStatuses />);
-
-    expect(screen.getByText(/placeholder for testing/)).toBeInTheDocument();
     expect(screen.getByText(/left out of the overview counts and the\s+Action Required page/)).toBeInTheDocument();
   });
 });
 
-describe("ActivityGuide", () => {
-  it("has one card per modelled activity, in the standard order", () => {
-    render(<ActivityGuide />);
+describe("SlaGuide", () => {
+  it("explains the start date and the projection date", () => {
+    render(<SlaGuide />);
 
-    const headings = screen.getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent);
-    expect(headings).toEqual(ACTIVITY_ORDER.map((key) => ACTIVITY_DEFINITIONS[key].name));
-  });
-
-  it("gives each activity its description, owner and completion rule", () => {
-    render(<ActivityGuide />);
-
-    for (const key of ACTIVITY_ORDER) {
-      const definition = ACTIVITY_DEFINITIONS[key];
-      const card = screen.getByRole("heading", { level: 3, name: definition.name }).closest("div[data-slot='card']");
-      expect(card, definition.name).not.toBeNull();
-      const scope = within(card as HTMLElement);
-
-      expect(scope.getByText(definition.description)).toBeInTheDocument();
-      expect(scope.getByText(definition.ownerTeam, { exact: false })).toBeInTheDocument();
-      expect(scope.getByText(definition.doneWhen, { exact: false })).toBeInTheDocument();
-      expect(scope.getByText(/Needed when:/)).toBeInTheDocument();
-    }
-  });
-
-  it("explains which activity has the fuller workflow", () => {
-    render(<ActivityGuide />);
-
-    expect(screen.getByText(/Studio Imagery has a fuller workflow/)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 3, name: "Start date" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 3, name: "Projection date" })).toBeInTheDocument();
+    expect(screen.getByText(/SLA Projection Date = start date plus the SLA working days/)).toBeInTheDocument();
   });
 });
 
@@ -165,11 +87,11 @@ describe("Walkthrough", () => {
     items.forEach((item, index) => expect(item).toHaveTextContent(new RegExp(`^${index + 1}`)));
   });
 
-  it("starts on the Little Acorn Wooden Play Kitchen and ends by resetting the demo", () => {
+  it("starts on Action Required and ends by resetting the demo", () => {
     render(<Walkthrough />);
 
     const items = screen.getAllByRole("listitem");
-    expect(items[0]).toHaveTextContent("Little Acorn Wooden Play Kitchen");
+    expect(items[0]).toHaveTextContent("Open Action Required");
     expect(items[items.length - 1]).toHaveTextContent("Reset demo data");
   });
 

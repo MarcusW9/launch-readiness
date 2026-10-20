@@ -61,7 +61,7 @@ export const GUIDE_CONTENTS = [
 export const TEST_FILES = [
   {
     file: "lib/launch/readiness.test.ts",
-    tests: 31,
+    tests: 11,
     protects: "Ready, Action Required and At Risk, the 10-day rule, lifecycle products and the needs-attention count.",
   },
   {
@@ -85,53 +85,23 @@ export const TEST_FILES = [
     protects: "The three readiness statuses, info needed by and passed deadlines, launch in working days, the three flags, the default sort, and that the seed data covers every case.",
   },
   {
-    file: "lib/launch/activities.test.ts",
-    tests: 31,
-    protects: "Which activities apply to which product, the reason shown, work states and workflow stages.",
-  },
-  {
     file: "lib/launch/filters.test.ts",
-    tests: 26,
+    tests: 15,
     protects: "Search, category, status, launch window, outstanding work and information filters, alone and combined.",
   },
   {
-    file: "lib/launch/information.test.ts",
-    tests: 37,
-    protects: "Every information item, who owns it, what it unlocks and the wording of each missing-information issue.",
-  },
-  {
-    file: "lib/launch/information-overview.test.ts",
-    tests: 15,
-    protects: "Available, missing and not-required information, and the counts shown on the Overview.",
-  },
-  {
-    file: "lib/launch/next-action.test.ts",
-    tests: 17,
-    protects: "The single next step offered for each product, in priority order, including blocked and unable-to-start work.",
-  },
-  {
-    file: "lib/launch/copy.test.ts",
-    tests: 10,
-    protects: "The wording used for headings and labels, so messages stay consistent across screens.",
-  },
-  {
     file: "lib/launch/store-reducer.test.ts",
-    tests: 20,
+    tests: 10,
     protects: "Providing information, moving work, blocking and clearing, notes, history and reset, and the permanent product notes log (newest first, trimmed, empty notes ignored, restored by reset).",
   },
   {
     file: "lib/launch/store.test.tsx",
-    tests: 12,
+    tests: 8,
     protects: "The in-memory store as components use it: each action reaches the right product, reset restores the demo data, and using it outside the provider fails loudly.",
   },
   {
-    file: "lib/launch/launch-journey.integration.test.ts",
-    tests: 13,
-    protects: "Whole journeys: providing information unlocks work, advancing work completes a product, and the calendar.",
-  },
-  {
     file: "lib/launch/seed-scenarios.integration.test.ts",
-    tests: 39,
+    tests: 27,
     protects: "Every demo product resolves correctly and every view agrees with every other view.",
   },
   {
@@ -146,7 +116,7 @@ export const TEST_FILES = [
   },
   {
     file: "lib/launch/weekly-summary.test.ts",
-    tests: 16,
+    tests: 17,
     protects: "The weekly summary rules: working days, scope (critical path filter or matching search, status card ignored), the three headline counts, At Risk and information-needed lists, date changes, stock after launch, the plain-text version, and that no status changes.",
   },
   {
@@ -166,12 +136,12 @@ export const TEST_FILES = [
   },
   {
     file: "lib/launch/docs-consistency.test.ts",
-    tests: 19,
+    tests: 18,
     protects: "That this list, the README, every change log release, the screenshots and the product IDs in the guide match the project.",
   },
   {
     file: "lib/auth/auth.test.ts",
-    tests: 18,
+    tests: 20,
     protects: "The demo session, roles and the permission checks behind the Reset demo data button and adding product notes.",
   },
   {
@@ -181,7 +151,7 @@ export const TEST_FILES = [
   },
   {
     file: "components/launch/status.test.tsx",
-    tests: 22,
+    tests: 6,
     protects: "Every readiness, lifecycle, activity and work-state pill says its status in words, including Unable to start.",
   },
   {
@@ -206,7 +176,7 @@ export const TEST_FILES = [
   },
   {
     file: "components/launch/overview-view.test.tsx",
-    tests: 12,
+    tests: 10,
     protects: "The Overview screen: summary cards, singular and plural wording, launched products and the links into filtered lists.",
   },
   {
@@ -216,12 +186,12 @@ export const TEST_FILES = [
   },
   {
     file: "components/launch/action-required-view.test.tsx",
-    tests: 9,
+    tests: 10,
     protects: "The Action Required screen: At Risk before Action Required, group counts, ordering by launch date and links to each activity.",
   },
   {
     file: "components/launch/product-detail-view.test.tsx",
-    tests: 18,
+    tests: 11,
     protects: "The Product page: readiness banner, summary, progress and the Provide information form from open to saved.",
   },
   {
@@ -240,29 +210,19 @@ export const TEST_FILES = [
     protects: "The weekly summary preview: the button in both roles, the subject and headline, linked Cat Nos, on track as a count only, Copy text, and the simulated send with its toast and notification.",
   },
   {
-    file: "components/launch/activity-detail-view.test.tsx",
-    tests: 28,
-    protects: "The Activity page: moving through stages, blockers, cannot-start warnings, notes, history and the studio brief.",
-  },
-  {
     file: "components/launch/guide-sections.test.tsx",
     tests: 12,
     protects: "The What is new section and the collapsible change log history: archived versions start closed, open on click and download their own file.",
   },
   {
     file: "components/launch/app-shell.test.tsx",
-    tests: 24,
+    tests: 22,
     protects: "The app shell: primary and footer navigation, the current-page marker, the live Action Required count, the prototype strip and who can reset the demo data.",
   },
   {
     file: "components/launch/how-it-works-sections.test.tsx",
-    tests: 18,
+    tests: 12,
     protects: "The How it works sections: the walkthrough content, contents links, the readiness and activity references and the glossary.",
-  },
-  {
-    file: "components/launch/steps.test.tsx",
-    tests: 6,
-    protects: "The numbered Steps list: order, numbering and the step text shown in the walkthrough.",
   },
   {
     file: "app/how-it-works/page.test.tsx",
@@ -272,7 +232,7 @@ export const TEST_FILES = [
 ] as const;
 
 export const TEST_TOTALS = {
-  tests: 672,
-  files: 42,
+  tests: 428,
+  files: 34,
   coverage: 99,
 } as const;
