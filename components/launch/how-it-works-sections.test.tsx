@@ -2,8 +2,19 @@
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { LATEST_RELEASE } from "@/lib/launch/guide-content";
-import { MANDATORY_FIELDS, SLA_CONFIG } from "@/lib/launch/readiness-config";
-import { InfoCard, Limits, ReadinessStatuses, Section, SlaGuide, TheModel, Walkthrough, WhatItIs } from "./how-it-works-sections";
+import { DATE_CHANGED_WITHIN_DAYS, MANDATORY_FIELDS, SLA_CONFIG } from "@/lib/launch/readiness-config";
+import {
+  FlagsAndPlaceholders,
+  HowTheThinkingChanged,
+  InfoCard,
+  Limits,
+  ReadinessStatuses,
+  Section,
+  SlaGuide,
+  TheModel,
+  Walkthrough,
+  WhatItIs,
+} from "./how-it-works-sections";
 
 describe("Section", () => {
   it("is a landmark named by its own heading", () => {
@@ -68,6 +79,30 @@ describe("ReadinessStatuses", () => {
   });
 });
 
+describe("FlagsAndPlaceholders", () => {
+  it("describes both flags and says they never change the status", () => {
+    render(<FlagsAndPlaceholders />);
+
+    const region = screen.getByRole("region", { name: "Flags and placeholders" });
+    expect(within(region).getByRole("heading", { level: 3, name: "Flags" })).toBeInTheDocument();
+    expect(within(region).getByText("Date Changed")).toBeInTheDocument();
+    expect(within(region).getByText(new RegExp(`last\\s+${DATE_CHANGED_WITHIN_DAYS} days`))).toBeInTheDocument();
+    expect(within(region).getByText("Stock lands after launch")).toBeInTheDocument();
+    expect(within(region).getByText(/never change the\s+status, the completeness or the SLA/)).toBeInTheDocument();
+  });
+
+  it("labels the SLA length as a placeholder, quoting the real numbers", () => {
+    render(<FlagsAndPlaceholders />);
+
+    expect(screen.getByRole("heading", { level: 3, name: "Placeholders" })).toBeInTheDocument();
+    expect(
+      screen.getByText(new RegExp(`${SLA_CONFIG.defaultWorkingDays} working days, 25 for a Guest bed`)),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/bank holidays are ignored/)).toBeInTheDocument();
+    expect(screen.getByText(/every product, ID and name is\s+fictional/)).toBeInTheDocument();
+  });
+});
+
 describe("SlaGuide", () => {
   it("explains the start date and the projection date", () => {
     render(<SlaGuide />);
@@ -99,6 +134,20 @@ describe("Walkthrough", () => {
     render(<Walkthrough />);
 
     expect(screen.getByRole("link", { name: /Start with Action Required/ })).toHaveAttribute("href", "/action-required");
+  });
+});
+
+describe("HowTheThinkingChanged", () => {
+  it("tells the story across versions 1, 3 and 4 in order", () => {
+    render(<HowTheThinkingChanged />);
+
+    const region = screen.getByRole("region", { name: "How the thinking changed" });
+    const titles = within(region)
+      .getAllByRole("heading", { level: 3 })
+      .map((heading) => heading.textContent);
+    expect(titles).toEqual(["Version 1", "Version 3", "Version 4"]);
+    expect(within(region).getByText(/information\s+completeness and SLA risk/)).toBeInTheDocument();
+    expect(within(region).getByText(/show-and-tell/)).toBeInTheDocument();
   });
 });
 

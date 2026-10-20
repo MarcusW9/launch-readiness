@@ -223,8 +223,8 @@ export const TEST_FILES = [
   },
   {
     file: "components/launch/how-it-works-sections.test.tsx",
-    tests: 12,
-    protects: "The How it works sections: the walkthrough content, contents links, the readiness and activity references and the glossary.",
+    tests: 15,
+    protects: "The How it works sections: the model and statuses, flags and placeholders, the SLA, the walkthrough, how the thinking changed and the limits.",
   },
   {
     file: "app/how-it-works/page.test.tsx",
@@ -234,7 +234,7 @@ export const TEST_FILES = [
 ] as const;
 
 export const TEST_TOTALS = {
-  tests: 428,
+  tests: 431,
   files: 34,
   coverage: 99,
 } as const;

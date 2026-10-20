@@ -66,7 +66,7 @@ Mandatory information -> SLA starts -> SLA Projection Date -> compared with the 
 - Documentation checks: a test compares this README, the How it works guide and the change logs with the real project.
 - Wording fix: Overview now says "1 product needs your attention" for a single product.
 - Change log history: the How it works page leads with the latest change log, and earlier versions are collapsed into an expandable history, each still downloadable.
-- 428 automated tests across 34 test files, plus 8 browser tests (run on desktop and mobile) covering navigation, providing information and the activity workflow.
+- 431 automated tests across 34 test files, plus 8 browser tests (run on desktop and mobile) covering navigation, providing information and the activity workflow.
 
 ### Delivered in v3
 
@@ -77,7 +77,7 @@ Mandatory information -> SLA starts -> SLA Projection Date -> compared with the 
 - Asynchronous product repository as the single data seam.
 - Session and permissions architecture with a built-in demo user. There is deliberately no sign-in screen.
 - A full How it works guide with eight screenshots and a downloadable Markdown change log.
-- 191 automated tests across 10 test files at release (now 428 across 34, see above).
+- 191 automated tests across 10 test files at release (now 431 across 34, see above).
 
 ### Behaviour worth knowing
 
@@ -129,7 +129,7 @@ pnpm dev        # http://localhost:3000
 
 ## Tests
 
-**428 tests across 34 test files, all passing, in a few seconds.** Business rules are tested as plain functions; components are tested the way a person uses them (by role, label and visible text) with Testing Library in jsdom.
+**431 tests across 34 test files, all passing, in a few seconds.** Business rules are tested as plain functions; components are tested the way a person uses them (by role, label and visible text) with Testing Library in jsdom.
 
 | File | Tests | Protects |
 | --- | ---: | --- |
@@ -165,7 +165,7 @@ pnpm dev        # http://localhost:3000
 | `components/launch/weekly-summary-dialog.test.tsx` | 6 | The weekly summary preview: the button in both roles, the subject and headline, linked Cat Nos, on track as a count only, Copy text, and the simulated send with its toast and notification. |
 | `components/launch/guide-sections.test.tsx` | 12 | The What is new section and the collapsible change log history: archived versions start closed, open on click and download their own file. |
 | `components/launch/app-shell.test.tsx` | 22 | The app shell: primary and footer navigation, the current-page marker, the live Action Required count, the prototype strip and who can reset the demo data. |
-| `components/launch/how-it-works-sections.test.tsx` | 12 | The How it works sections: the walkthrough content, contents links, the readiness and activity references and the glossary. |
+| `components/launch/how-it-works-sections.test.tsx` | 15 | The How it works sections: the model and statuses, flags and placeholders, the SLA, the walkthrough, how the thinking changed and the limits. |
 | `app/how-it-works/page.test.tsx` | 8 | The whole How it works page: metadata, every contents entry pointing at a real section, the downloads and the change log history. |
 
 Coverage of the business rules and auth (`lib/**`) is about 99 percent of statements, 99 percent of branches and 100 percent of functions. `vitest.config.mts` fails the run if `lib/**` drops below 95 percent statements, 90 percent branches, 95 percent functions or 95 percent lines.

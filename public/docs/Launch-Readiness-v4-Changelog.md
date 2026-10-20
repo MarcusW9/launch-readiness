@@ -20,7 +20,7 @@ Everything in version 3.5 still applies. Its change log is archived and can stil
 | Studio view | A switch on Products between the Exceptions view and a Studio view with its own columns, filters, Group by style and a CSV export of the filtered rows. |
 | Weekly summary | A "Preview weekly summary" button in the Exceptions view opens an email-style preview (at risk, information incomplete, on track, what changed). Copy text and a simulated send, with a toast and a notification. Nothing is sent. |
 | Later | Job ID, per-category views, real export and email, Commercial review. |
-| Quality | 428 automated tests across 34 files (up from 481 in version 3.5), plus browser tests of the main journeys on desktop and mobile. |
+| Quality | 431 automated tests across 34 files (up from 481 in version 3.5), plus browser tests of the main journeys on desktop and mobile. |
 
 ## What the show-and-tell told us
 
@@ -166,6 +166,13 @@ The main screen stays simple. Extra columns do not go back onto the Products tab
 5. The README has matching "Statuses, flags and placeholders" and "How the thinking changed" sections, and its product page row now links to a real seed product (`/products/4567890`).
 6. Tests: type-check is clean and all 428 tests pass across 34 files.
 
+## Fix 5b: Tests for the new How it works sections
+
+1. Added tests for the two new How it works sections. "Flags and placeholders" is checked for both flags (Date Changed with its seven-day window, Stock lands after launch), the statement that flags never change the status, completeness or SLA, and the placeholder SLA length (the default and the 25 working days for a Guest bed) with the working-day and fictional-data notes. "How the thinking changed" is checked for version 1, version 3 and version 4 in order. File: `components/launch/how-it-works-sections.test.tsx`, which grows from 12 to 15 tests.
+2. The README test table, the per-file test table on How it works and this change log now read 431 automated tests across 34 files (up from 428). Files: `README.md`, `lib/launch/guide-content.ts`.
+3. The README and How it works descriptions of `how-it-works-sections.test.tsx` now name the sections it covers, replacing wording that referred to content that no longer exists.
+4. Tests: type-check is clean and all 431 tests pass across 34 files.
+
 ## Roadmap: later, not part of version 4
 
 - Job ID, as an optional field entered by the studio when a product is ready to brief.
@@ -192,7 +199,7 @@ The main screen stays simple. Extra columns do not go back onto the Products tab
 
 ## Quality
 
-- 428 automated tests across 34 files, all passing. The weekly summary adds 22: `weekly-summary.test.ts` 16 and `weekly-summary-dialog.test.tsx` 6. The Studio view adds 35: `studio.test.ts` 18 and `studio-view.test.tsx` 17. The Products view test grew from 10 to 25 tests for the filter bar, tabs and critical path summary, a new `critical-path.test.ts` adds 11, and the notes log adds 28 (`product-notes.test.ts` 6, `seed-notes.test.ts` 6, `product-notes.test.tsx` 11, plus 3 in the store reducer tests and 2 in the auth tests). The readiness model adds 77 across four new files: `working-days.test.ts` 13, `completeness.test.ts` 20, `sla.test.ts` 9 and `readiness-model.test.ts` 35.
+- 431 automated tests across 34 files, all passing. The weekly summary adds 22: `weekly-summary.test.ts` 16 and `weekly-summary-dialog.test.tsx` 6. The Studio view adds 35: `studio.test.ts` 18 and `studio-view.test.tsx` 17. The Products view test grew from 10 to 25 tests for the filter bar, tabs and critical path summary, a new `critical-path.test.ts` adds 11, and the notes log adds 28 (`product-notes.test.ts` 6, `seed-notes.test.ts` 6, `product-notes.test.tsx` 11, plus 3 in the store reducer tests and 2 in the auth tests). The readiness model adds 77 across four new files: `working-days.test.ts` 13, `completeness.test.ts` 20, `sla.test.ts` 9 and `readiness-model.test.ts` 35.
 - Browser tests (Playwright, run with `pnpm test:e2e`): 8 specs, 16 runs across a desktop and a mobile viewport.
 - About 99 percent statement coverage of the business rules and auth (`lib/**`).
 
