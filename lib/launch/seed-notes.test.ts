@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { SEED_PRODUCTS } from "./data";
 import { MAX_NOTE_LENGTH, NOTE_AUTHORS, NOTE_ROLE_LABELS } from "./product-notes";
-import { summariseReadiness } from "./readiness";
+import { assessProduct } from "./readiness-model";
 
 const DEMO_DAY_END = "2026-11-10T23:59";
 
@@ -51,7 +51,9 @@ describe("seed notes", () => {
 
   it("never changes a product's readiness", () => {
     for (const product of productsWithNotes) {
-      expect(summariseReadiness(product)).toEqual(summariseReadiness({ ...product, notes: [] }));
+      const { product: _a, ...withNotes } = assessProduct(product);
+      const { product: _b, ...withoutNotes } = assessProduct({ ...product, notes: [] });
+      expect(withNotes).toEqual(withoutNotes);
     }
   });
 });

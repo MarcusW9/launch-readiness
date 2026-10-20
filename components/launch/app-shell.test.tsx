@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DEMO_SESSION } from "@/lib/auth/mock-provider";
 import type { Session } from "@/lib/auth";
 import { useLaunch } from "@/lib/launch/store";
-import { makeProduct, stateAt, withActivity } from "@/lib/launch/testing/fixtures";
+import { makeProduct, withMissingFields } from "@/lib/launch/testing/fixtures";
 import type { Product } from "@/lib/launch/types";
 import { AppShell } from "./app-shell";
 
@@ -20,18 +20,14 @@ vi.mock("next-themes", () => ({
 }));
 
 const ready = makeProduct({ id: "1000001", name: "Ready Armchair" });
-const needsWork = withActivity(
-  makeProduct({ id: "1000002", name: "Urgent Lamp", launchDate: "2026-11-15" }),
-  "product-content",
-  stateAt("in-progress"),
+const needsWork = withMissingFields(
+  makeProduct({ id: "1000002", name: "Urgent Lamp", launchDate: "2026-12-30" }),
+  "supplierName",
 );
-const alsoNeedsWork = withActivity(
+const alsoNeedsWork = withMissingFields(
   makeProduct({ id: "1000003", name: "Distant Table", launchDate: "2026-12-30" }),
-  "product-content",
-  stateAt("not-started"),
+  "supplierName",
 );
-
-const viewer: Session = { user: { ...DEMO_SESSION.user, role: "viewer" } };
 
 function renderShell({
   products = [ready],
@@ -88,7 +84,7 @@ describe("AppShell", () => {
   });
 
   describe("action required count", () => {
-    it("is zero when every product is ready", () => {
+    it("is zero when every product is on track", () => {
       renderShell({ products: [ready] });
 
       expect(within(primaryNav()).getByRole("link", { name: "Action Required (0)" })).toBeInTheDocument();
@@ -100,10 +96,10 @@ describe("AppShell", () => {
       expect(within(primaryNav()).getByRole("link", { name: "Action Required (2)" })).toBeInTheDocument();
     });
 
-    it("updates when a product becomes ready", async () => {
+    it("updates when missing information is supplied", async () => {
       function Finish() {
-        const { setStage } = useLaunch();
-        return <button onClick={() => setStage("1000002", "product-content", "complete")}>Finish content</button>;
+        const { editField } = useLaunch();
+        return <button onClick={() => editField("1000002", "supplierName", "Oakline Supply")}>Finish content</button>;
       }
       renderShell({ products: [needsWork], children: <Finish /> });
 
@@ -126,8 +122,7 @@ describe("AppShell", () => {
       ["/", "Overview"],
       ["/products", "Products"],
       ["/products/1000001", "Products"],
-      ["/products/1000001/activities/product-content", "Products"],
-      ["/action-required", "Action Required (0)"],
+            ["/action-required", "Action Required (0)"],
       ["/how-it-works", "How it works"],
     ])("marks only the right link as current on %s", (path, expected) => {
       pathname = path;
@@ -158,25 +153,22 @@ describe("AppShell", () => {
       expect(screen.getByText(/Portfolio prototype using synthetic demo data\. Demo date: .+\./)).toBeInTheDocument();
     });
 
-    it("offers a reset to an editor", () => {
+    it("offers a reset to a signed-in user", () => {
       renderShell({ session: DEMO_SESSION });
 
       expect(screen.getByRole("button", { name: "Reset demo data" })).toBeInTheDocument();
     });
 
-    it.each([
-      ["a viewer", viewer],
-      ["nobody signed in", null],
-    ])("hides the reset for %s", (_label, session) => {
-      renderShell({ session });
+    it("hides the reset when nobody is signed in", () => {
+      renderShell({ session: null });
 
       expect(screen.queryByRole("button", { name: "Reset demo data" })).not.toBeInTheDocument();
     });
 
     it("puts every product back to its starting state when reset", async () => {
       function Finish() {
-        const { setStage } = useLaunch();
-        return <button onClick={() => setStage("1000002", "product-content", "complete")}>Finish content</button>;
+        const { editField } = useLaunch();
+        return <button onClick={() => editField("1000002", "supplierName", "Oakline Supply")}>Finish content</button>;
       }
       renderShell({ products: [needsWork], children: <Finish /> });
 
@@ -188,17 +180,23 @@ describe("AppShell", () => {
     });
   });
 
-  describe("signed-in user", () => {
-    it("shows the user's name in the header", () => {
+  describe("viewing as", () => {
+    it("offers both roles and marks the signed-in one as pressed", () => {
       renderShell({ session: DEMO_SESSION });
 
-      expect(screen.getByText("Demo user")).toBeInTheDocument();
+      const group = screen.getByRole("group", { name: "Viewing as" });
+      const buttons = within(group).getAllByRole("button");
+      expect(buttons.map((button) => button.getAttribute("aria-pressed"))).toEqual(["true", "false"]);
     });
 
-    it("shows no name when nobody is signed in", () => {
-      renderShell({ session: null });
+    it("switches the role when the other one is chosen", async () => {
+      renderShell({ session: DEMO_SESSION });
 
-      expect(screen.queryByText("Demo user")).not.toBeInTheDocument();
+      const group = screen.getByRole("group", { name: "Viewing as" });
+      const [, other] = within(group).getAllByRole("button");
+      await userEvent.click(other);
+
+      expect(other).toHaveAttribute("aria-pressed", "true");
     });
   });
 

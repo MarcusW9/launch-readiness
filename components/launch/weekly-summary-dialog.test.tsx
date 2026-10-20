@@ -4,8 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { DEMO_SESSION } from "@/lib/auth/mock-provider";
 import type { Session } from "@/lib/auth/types";
-import { INFORMATION_ORDER } from "@/lib/launch/information";
-import { makeProduct, stateAt, withoutInformation } from "@/lib/launch/testing/fixtures";
+import { makeProduct, withMissingFields } from "@/lib/launch/testing/fixtures";
 import { renderWithStore } from "@/lib/launch/testing/render";
 import { NotificationsMenu } from "./notifications-menu";
 import { ProductsView } from "./products-view";
@@ -15,12 +14,16 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
 }));
 
-const outstanding = { characteristics: { hasVariants: true }, activities: { variants: stateAt("not-started") } };
-
-const risky = makeProduct({ id: "3100001", name: "Risky Rug", criticalPath: "AW26 PH1", launchDate: "2026-11-17", ...outstanding });
-const soon = withoutInformation(
-  makeProduct({ id: "3100002", name: "Soon Sofa", criticalPath: "AW26 PH1", launchDate: "2026-12-04", ...outstanding }),
-  INFORMATION_ORDER[0],
+const risky = makeProduct({
+  id: "3100001",
+  name: "Risky Rug",
+  criticalPath: "AW26 PH1",
+  launchDate: "2026-11-20",
+  infoCompleteAt: "2026-11-02",
+});
+const soon = withMissingFields(
+  makeProduct({ id: "3100002", name: "Soon Sofa", criticalPath: "AW26 PH1", launchDate: "2026-12-04" }),
+  "supplierName",
 );
 const onTrack = makeProduct({ id: "3100003", name: "Ready Rack", criticalPath: "SS27 PH1", launchDate: "2027-03-01" });
 const moved = makeProduct({

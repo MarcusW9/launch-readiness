@@ -2,8 +2,8 @@
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
-import { DEMO_SESSION } from "@/lib/auth/mock-provider";
-import { summariseReadiness } from "@/lib/launch/readiness";
+import { sessionForRole } from "@/lib/auth/permissions";
+import { assessProduct } from "@/lib/launch/readiness-model";
 import { makeProduct } from "@/lib/launch/testing/fixtures";
 import { renderWithStore } from "@/lib/launch/testing/render";
 import type { Product } from "@/lib/launch/types";
@@ -20,7 +20,7 @@ const withNotes = makeProduct({
 });
 const noNotes = makeProduct({ id: "1000002", name: "Quiet Table" });
 
-const viewerSession = { ...DEMO_SESSION, user: { ...DEMO_SESSION.user, role: "viewer" as const } };
+const commercialSession = sessionForRole("commercial");
 
 describe("ProductNotes", () => {
   it("titles the section with the note count and shows the permanent-log caption", () => {
@@ -75,9 +75,9 @@ describe("ProductNotes", () => {
     expect(screen.getByText("5 / 500")).toBeInTheDocument();
   });
 
-  it("adds a note at the top straight away, as the commercial editor, and clears the box", async () => {
+  it("adds a note at the top straight away, as Commercial / Range Planning, and clears the box", async () => {
     const user = userEvent.setup();
-    renderWithStore(<ProductDetailView productId="1000001" />, [withNotes]);
+    renderWithStore(<ProductDetailView productId="1000001" />, [withNotes], commercialSession);
 
     await user.type(screen.getByLabelText("Add a note"), "Supplier to provide lifestyle images");
     await user.click(screen.getByRole("button", { name: "Add note" }));
@@ -91,7 +91,7 @@ describe("ProductNotes", () => {
 
   it("lets the downstream team add notes as the downstream author", async () => {
     const user = userEvent.setup();
-    renderWithStore(<ProductDetailView productId="1000002" />, [noNotes], viewerSession);
+    renderWithStore(<ProductDetailView productId="1000002" />, [noNotes]);
 
     await user.type(screen.getByLabelText("Add a note"), "Needs a lifestyle shot");
     await user.click(screen.getByRole("button", { name: "Add note" }));
@@ -107,17 +107,18 @@ describe("ProductNotes", () => {
 });
 
 describe("Notes on the product page", () => {
-  it("sits above the product information sections", () => {
+  it("sits beside the product information, in the side column", () => {
     renderWithStore(<ProductDetailView productId="1000001" />, [withNotes]);
 
     const notes = screen.getByRole("heading", { name: "Notes (2)" });
-    const information = screen.getAllByRole("heading").find((heading) => /information/i.test(heading.textContent ?? ""));
-    expect(information).toBeDefined();
-    expect(notes.compareDocumentPosition(information as HTMLElement) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const information = screen.getByText("Product information");
+    expect(information.compareDocumentPosition(notes) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("does not change the product's readiness", () => {
     const stripped: Product = { ...withNotes, notes: [] };
-    expect(summariseReadiness(withNotes)).toEqual(summariseReadiness(stripped));
+    const { product: _a, ...withAssessment } = assessProduct(withNotes);
+    const { product: _b, ...strippedAssessment } = assessProduct(stripped);
+    expect(withAssessment).toEqual(strippedAssessment);
   });
 });

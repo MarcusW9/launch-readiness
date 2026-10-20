@@ -12,8 +12,8 @@ vi.mock("next/navigation", () => ({
 }));
 
 const products = [
-  makeProduct({ id: "1000001", name: "Oat Cookies", category: "Bakery" }),
-  makeProduct({ id: "1000002", name: "Garden Chair", category: "Furniture" }),
+  makeProduct({ id: "1000001", name: "Oat Cookies", range: "Bakery" }),
+  makeProduct({ id: "1000002", name: "Garden Chair", range: "Furniture" }),
 ];
 
 describe("ProductsTable", () => {
@@ -31,19 +31,10 @@ describe("ProductsTable", () => {
 
     expect(screen.getByRole("table", { name: "All products" })).toBeInTheDocument();
     const headings = screen.getAllByRole("columnheader").map((heading) => heading.textContent);
-    expect(headings).toEqual([
-      "Product",
-      "Category",
-      "Launch date",
-      "Imagery",
-      "Content",
-      "Variants",
-      "Compliance",
-      "Status",
-    ]);
+    expect(headings).toEqual(["Product", "Range", "Critical path", "Proposed launch", "SLA projection", "Status"]);
   });
 
-  it("shows one row per product, with its name, ID and category", () => {
+  it("shows one row per product, with its name, ID and range", () => {
     render(<ProductsTable products={products} caption="All products" />);
 
     const rows = screen.getAllByRole("row").slice(1);
@@ -51,7 +42,7 @@ describe("ProductsTable", () => {
 
     const first = within(rows[0]);
     expect(first.getByRole("link", { name: "Oat Cookies" })).toHaveAttribute("href", "/products/1000001");
-    expect(first.getByText("ID 1000001")).toBeInTheDocument();
+    expect(first.getByText(/1000001 · Oakline/)).toBeInTheDocument();
     expect(first.getByText("Bakery")).toBeInTheDocument();
 
     expect(within(rows[1]).getByRole("link", { name: "Garden Chair" })).toHaveAttribute("href", "/products/1000002");

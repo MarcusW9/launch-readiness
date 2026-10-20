@@ -22,9 +22,9 @@ describe("validateNote", () => {
 });
 
 describe("note roles", () => {
-  it("maps editors to Commercial / Range Planning and viewers to the Downstream team", () => {
-    expect(noteRoleFor("editor")).toBe("commercial");
-    expect(noteRoleFor("viewer")).toBe("downstream");
+  it("maps each role to its note role", () => {
+    expect(noteRoleFor("commercial")).toBe("commercial");
+    expect(noteRoleFor("downstream")).toBe("downstream");
     expect(NOTE_ROLE_LABELS.commercial).toBe("Commercial / Range Planning");
     expect(NOTE_ROLE_LABELS.downstream).toBe("Downstream team");
   });

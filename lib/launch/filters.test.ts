@@ -1,70 +1,66 @@
 import { describe, expect, it } from "vitest";
 import {
   EMPTY_FILTERS,
-  INFORMATION_OPTIONS,
   LAUNCH_WINDOW_OPTIONS,
-  OUTSTANDING_OPTIONS,
-  READINESS_OPTIONS,
-  activityLabel,
+  NOT_ASSIGNED,
+  countByTab,
   filterProducts,
+  getBrands,
   getCategories,
-  isInformationFilter,
-  isOutstandingFilter,
-  isReadinessFilter,
+  getCriticalPaths,
+  getProductTab,
+  getRanges,
+  isFlagFilter,
+  isStatusFilter,
   type ProductFilters,
 } from "./filters";
-import { makeProduct, stateAt, withoutInformation } from "./testing/fixtures";
+import { makeProduct, withMissingFields } from "./testing/fixtures";
 
 const atRiskTable = makeProduct({
   id: "1000001",
   name: "Oak Table",
   brand: "Oakline",
   category: "Furniture",
-  launchDate: "2026-11-15",
-  activities: { "product-content": stateAt("in-progress") },
+  range: "Dining",
+  criticalPath: "AW26 PH1",
+  launchDate: "2026-11-20",
+  infoCompleteAt: "2026-11-02",
 });
 
-const missingInfoCushion = withoutInformation(
+const incompleteCushion = withMissingFields(
   makeProduct({
     id: "1000002",
     name: "Linen Cushion",
     brand: "Hearthwell",
     category: "Textiles",
+    range: undefined,
+    criticalPath: undefined,
     launchDate: "2026-11-30",
-    activities: { "supplier-imagery": stateAt("not-started") },
   }),
-  "image-delivery",
+  "supplierName",
 );
 
-const readyLamp = makeProduct({
+const onTrackLamp = makeProduct({
   id: "1000003",
   name: "Brass Lamp",
   brand: "Oakline",
   category: "Lighting",
+  range: "Living room",
   launchDate: "2026-12-30",
 });
 
-const liveSofa = makeProduct({
-  id: "1000004",
-  name: "Old Sofa",
-  brand: "Hearthwell",
-  category: "Furniture",
-  launchDate: "2026-10-01",
-  lifecycle: "Live",
-  activities: { "product-content": stateAt("not-started") },
+const liveSofa = makeProduct({ id: "1000004", name: "Old Sofa", brand: "Hearthwell", category: "Furniture", launchDate: "2026-10-01", lifecycle: "Live" });
+const droppedChair = makeProduct({ id: "1000005", name: "Dropped Chair", category: "Furniture", lifecycle: "Dropped" });
+const changedShelf = makeProduct({
+  id: "1000006",
+  name: "Moved Shelf",
+  launchDate: "2026-12-20",
+  previousLaunchDate: "2026-12-01",
+  launchDateChangedOn: "2026-11-08",
 });
+const lateStockDesk = makeProduct({ id: "1000007", name: "Late Desk", launchDate: "2026-12-20", stockLandsDate: "2027-01-10" });
 
-const variantChair = makeProduct({
-  id: "1000005",
-  name: "Variant Chair",
-  brand: "Oakline",
-  category: "Furniture",
-  launchDate: "2026-12-05",
-  characteristics: { hasVariants: true },
-  activities: { variants: stateAt("in-progress") },
-});
-
-const catalogue = [atRiskTable, missingInfoCushion, readyLamp, liveSofa, variantChair];
+const catalogue = [atRiskTable, incompleteCushion, onTrackLamp, liveSofa, droppedChair, changedShelf, lateStockDesk];
 
 function ids(filters: Partial<ProductFilters>) {
   return filterProducts(catalogue, { ...EMPTY_FILTERS, ...filters }).map((product) => product.id);
@@ -72,151 +68,95 @@ function ids(filters: Partial<ProductFilters>) {
 
 describe("filterProducts", () => {
   it("returns every product, in order, for empty filters", () => {
-    expect(ids({})).toEqual(["1000001", "1000002", "1000003", "1000004", "1000005"]);
+    expect(ids({})).toEqual(catalogue.map((product) => product.id));
   });
 
-  it("returns a new array and leaves the input untouched", () => {
+  it("searches name, ID, brand, range and critical path, ignoring case and spacing", () => {
+    expect(ids({ query: "  oak TABLE " })).toEqual(["1000001"]);
+    expect(ids({ query: "1000003" })).toEqual(["1000003"]);
+    expect(ids({ query: "hearthwell" })).toEqual(["1000002", "1000004"]);
+    expect(ids({ query: "dining" })).toEqual(["1000001"]);
+    expect(ids({ query: "aw26" })).toContain("1000001");
+  });
+
+  it("filters by category, brand, range and critical path", () => {
+    expect(ids({ category: "Lighting" })).toEqual(["1000003"]);
+    expect(ids({ brand: "Hearthwell" })).toEqual(["1000002", "1000004"]);
+    expect(ids({ range: "Dining" })).toEqual(["1000001"]);
+    expect(ids({ criticalPath: "AW26 PH1" })).toContain("1000001");
+  });
+
+  it("matches products with no range or critical path on the not-assigned value", () => {
+    expect(ids({ range: NOT_ASSIGNED })).toEqual(["1000002"]);
+    expect(ids({ criticalPath: NOT_ASSIGNED })).toEqual(["1000002"]);
+  });
+
+  it("filters by the calculated status, only for products still being prepared", () => {
+    expect(ids({ status: "Expectation At Risk" })).toEqual(["1000001"]);
+    expect(ids({ status: "Information Incomplete" })).toEqual(["1000002"]);
+    expect(ids({ status: "On Track" })).not.toContain("1000004");
+  });
+
+  it("filters by the Date Changed and stock flags", () => {
+    expect(ids({ flag: "dateChanged" })).toEqual(["1000006"]);
+    expect(ids({ flag: "stockAfterLaunch" })).toEqual(["1000007"]);
+  });
+
+  it("filters by launch window", () => {
+    expect(ids({ window: "14" })).toEqual(["1000001"]);
+    expect(ids({ window: "30" })).toEqual(["1000001", "1000002"]);
+    expect(ids({ window: "later" })).toEqual(["1000003", "1000005", "1000006", "1000007"]);
+  });
+
+  it("combines filters", () => {
+    expect(ids({ category: "Furniture", status: "Expectation At Risk" })).toEqual(["1000001"]);
+    expect(ids({ category: "Lighting", status: "Expectation At Risk" })).toEqual([]);
+  });
+
+  it("does not change the input", () => {
     const input = [...catalogue];
-    const result = filterProducts(input, EMPTY_FILTERS);
-    expect(result).not.toBe(input);
+    filterProducts(input, { ...EMPTY_FILTERS, query: "oak" });
     expect(input).toEqual(catalogue);
   });
+});
 
-  describe("search", () => {
-    it("matches name, id and brand without regard to case", () => {
-      expect(ids({ query: "TABLE" })).toEqual(["1000001"]);
-      expect(ids({ query: "1000003" })).toEqual(["1000003"]);
-      expect(ids({ query: "oakline" })).toEqual(["1000001", "1000003", "1000005"]);
-    });
-
-    it("trims whitespace around the query", () => {
-      expect(ids({ query: "  lamp  " })).toEqual(["1000003"]);
-    });
-
-    it("treats a whitespace-only query as no query", () => {
-      expect(ids({ query: "   " })).toHaveLength(5);
-    });
-
-    it("returns nothing when nothing matches", () => {
-      expect(ids({ query: "zzz" })).toEqual([]);
-    });
+describe("tabs", () => {
+  it("puts products on a tab by lifecycle", () => {
+    expect(getProductTab(onTrackLamp)).toBe("active");
+    expect(getProductTab(liveSofa)).toBe("launched");
+    expect(getProductTab(makeProduct({ lifecycle: "Offsale" }))).toBe("launched");
+    expect(getProductTab(droppedChair)).toBe("dropped");
   });
 
-  it("filters by category", () => {
-    expect(ids({ category: "Furniture" })).toEqual(["1000001", "1000004", "1000005"]);
-    expect(ids({ category: "Garden" })).toEqual([]);
+  it("filters by tab", () => {
+    expect(ids({ tab: "launched" })).toEqual(["1000004"]);
+    expect(ids({ tab: "dropped" })).toEqual(["1000005"]);
   });
 
-  describe("status", () => {
-    it("filters by readiness", () => {
-      expect(ids({ readiness: "At Risk" })).toEqual(["1000001"]);
-      expect(ids({ readiness: "Action Required" })).toEqual(["1000002", "1000005"]);
-      expect(ids({ readiness: "Ready" })).toEqual(["1000003"]);
-    });
-
-    it("filters by lifecycle status", () => {
-      expect(ids({ readiness: "Live" })).toEqual(["1000004"]);
-      expect(ids({ readiness: "Dropped" })).toEqual([]);
-    });
-  });
-
-  describe("launch window", () => {
-    it("includes products launching within the window, boundary included", () => {
-      expect(ids({ window: "7" })).toEqual(["1000001"]);
-      expect(ids({ window: "14" })).toEqual(["1000001"]);
-      expect(ids({ window: "30" })).toEqual(["1000001", "1000002", "1000005"]);
-    });
-
-    it("excludes products that launched in the past from upcoming windows", () => {
-      expect(ids({ window: "7" })).not.toContain("1000004");
-      expect(ids({ window: "30" })).not.toContain("1000004");
-    });
-
-    it("selects only products more than 30 days away for later", () => {
-      expect(ids({ window: "later" })).toEqual(["1000003"]);
-    });
-  });
-
-  describe("outstanding activity", () => {
-    it("finds products with outstanding work of a given type", () => {
-      expect(ids({ outstanding: "product-content" })).toEqual(["1000001"]);
-      expect(ids({ outstanding: "variants" })).toEqual(["1000005"]);
-    });
-
-    it("treats imagery as whichever imagery activity applies", () => {
-      expect(ids({ outstanding: "imagery" })).toEqual(["1000002"]);
-    });
-
-    it("never matches an activity that does not apply", () => {
-      expect(ids({ outstanding: "compliance" })).toEqual([]);
-    });
-
-    it("ignores products that are no longer being prepared", () => {
-      expect(ids({ outstanding: "product-content" })).not.toContain("1000004");
-    });
-  });
-
-  describe("information", () => {
-    it("keeps only products with missing information", () => {
-      expect(ids({ information: "missing" })).toEqual(["1000002"]);
-    });
-
-    it("does not count missing information on Live products", () => {
-      const sofa = withoutInformation(liveSofa, "spec-sheet");
-      expect(filterProducts([sofa], { ...EMPTY_FILTERS, information: "missing" })).toEqual([]);
-    });
-  });
-
-  it("combines filters with AND", () => {
-    expect(ids({ category: "Furniture", readiness: "Action Required" })).toEqual(["1000005"]);
-    expect(ids({ window: "30", information: "missing" })).toEqual(["1000002"]);
-    expect(ids({ category: "Textiles", readiness: "Ready" })).toEqual([]);
+  it("counts each tab with every other filter applied", () => {
+    expect(countByTab(catalogue, { ...EMPTY_FILTERS, tab: "dropped" })).toEqual({ active: 5, launched: 1, dropped: 1 });
+    expect(countByTab(catalogue, { ...EMPTY_FILTERS, category: "Furniture" })).toEqual({ active: 3, launched: 1, dropped: 1 });
   });
 });
 
-describe("getCategories", () => {
-  it("returns unique categories in alphabetical order", () => {
+describe("filter choices", () => {
+  it("lists categories and brands once, sorted", () => {
     expect(getCategories(catalogue)).toEqual(["Furniture", "Lighting", "Textiles"]);
+    expect(getBrands(catalogue)).toEqual(["Hearthwell", "Oakline"]);
   });
 
-  it("returns an empty list for no products", () => {
-    expect(getCategories([])).toEqual([]);
-  });
-});
-
-describe("type guards", () => {
-  it("accepts every status option except all", () => {
-    for (const option of READINESS_OPTIONS.filter((o) => o.value !== "all")) {
-      expect(isReadinessFilter(option.value)).toBe(true);
-    }
-    expect(isReadinessFilter("all")).toBe(false);
-    expect(isReadinessFilter("ready")).toBe(false);
-    expect(isReadinessFilter(undefined)).toBe(false);
+  it("lists ranges and critical paths with the not-assigned value first when any product lacks one", () => {
+    expect(getRanges(catalogue)[0]).toBe(NOT_ASSIGNED);
+    expect(getRanges(catalogue)).toContain("Dining");
+    expect(getCriticalPaths([onTrackLamp])).toEqual(["AW26 PH1"]);
   });
 
-  it("accepts the outstanding options and rejects internal activity keys", () => {
-    for (const option of OUTSTANDING_OPTIONS) expect(isOutstandingFilter(option.value)).toBe(true);
-    expect(isOutstandingFilter("studio-imagery")).toBe(false);
-    expect(isOutstandingFilter(undefined)).toBe(false);
-  });
-
-  it("accepts only the known information options", () => {
-    for (const option of INFORMATION_OPTIONS) expect(isInformationFilter(option.value)).toBe(true);
-    expect(isInformationFilter("present")).toBe(false);
-    expect(isInformationFilter(undefined)).toBe(false);
-  });
-});
-
-describe("options and labels", () => {
-  it("starts every option list with the unfiltered choice", () => {
-    expect(READINESS_OPTIONS[0].value).toBe("all");
-    expect(LAUNCH_WINDOW_OPTIONS[0].value).toBe("all");
-    expect(OUTSTANDING_OPTIONS[0].value).toBe("all");
-    expect(INFORMATION_OPTIONS[0].value).toBe("all");
-  });
-
-  it("uses the activity name as its label", () => {
-    expect(activityLabel("studio-imagery")).toBe("Studio Imagery");
-    expect(activityLabel("product-setup")).toBe("Product Setup");
+  it("offers launch windows and recognises valid status and flag values", () => {
+    expect(LAUNCH_WINDOW_OPTIONS.map((option) => option.value)).toEqual(["all", "7", "14", "30", "later"]);
+    expect(isStatusFilter("On Track")).toBe(true);
+    expect(isStatusFilter("Ready")).toBe(false);
+    expect(isStatusFilter(undefined)).toBe(false);
+    expect(isFlagFilter("dateChanged")).toBe(true);
+    expect(isFlagFilter("all")).toBe(false);
   });
 });

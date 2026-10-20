@@ -3,11 +3,8 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { resolveActivity, resolveImagery, type ResolvedActivity } from "@/lib/launch/activities";
-import { getInformationOverview, getMissingInformation } from "@/lib/launch/information-overview";
-import { compareByUrgency, needsAttention, summariseReadiness } from "@/lib/launch/readiness";
+import { assessAndSort } from "@/lib/launch/readiness-model";
 import { useLaunch } from "@/lib/launch/store";
-import type { Product } from "@/lib/launch/types";
 import { LabelledProgress } from "./labelled-progress";
 import { LinkButton } from "./link-button";
 import { Page, PageHeading, SectionHeading } from "./page-frame";
@@ -15,46 +12,20 @@ import { ProductsTable } from "./products-table";
 import { StatusAlert } from "./status-alert";
 import { SummaryCards } from "./summary-cards";
 
-interface ActivityProgress {
-  label: string;
-  complete: number;
-  total: number;
-}
-
-function buildActivityProgress(products: Product[]): ActivityProgress[] {
-  const rows: Array<{ label: string; pick: (product: Product) => ResolvedActivity }> = [
-    { label: "Product setup", pick: (p) => resolveActivity(p, "product-setup") },
-    { label: "Imagery", pick: resolveImagery },
-    { label: "Product content", pick: (p) => resolveActivity(p, "product-content") },
-    { label: "Variants", pick: (p) => resolveActivity(p, "variants") },
-    { label: "Compliance", pick: (p) => resolveActivity(p, "compliance") },
-  ];
-
-  return rows.map(({ label, pick }) => {
-    const applicable = products.map(pick).filter((activity) => activity.applies);
-    return {
-      label,
-      total: applicable.length,
-      complete: applicable.filter((activity) => activity.status === "Complete").length,
-    };
-  });
-}
-
 const UPCOMING_LIMIT = 6;
 
 export function OverviewView() {
   const { products } = useLaunch();
-  const preparing = products.filter((product) => summariseReadiness(product).isPreparing);
-  const upcoming = [...preparing].sort(compareByUrgency).slice(0, UPCOMING_LIMIT);
-  const progress = buildActivityProgress(preparing);
-  const needAttention = products.filter(needsAttention).length;
-  const missingByProduct = preparing.map((product) => getMissingInformation(product).length);
-  const missingTotal = missingByProduct.reduce((sum, count) => sum + count, 0);
-  const missingProducts = missingByProduct.filter((count) => count > 0).length;
-  const requiredTotal = preparing.reduce((sum, product) => {
-    const overview = getInformationOverview(product);
-    return sum + overview.available.length + overview.missing.length;
-  }, 0);
+  const preparing = assessAndSort(products).filter((assessment) => assessment.isPreparing);
+  const upcoming = preparing.slice(0, UPCOMING_LIMIT).map((assessment) => assessment.product);
+  const atRisk = preparing.filter((assessment) => assessment.status === "Expectation At Risk").length;
+  const incomplete = preparing.filter((assessment) => assessment.status === "Information Incomplete").length;
+  const mandatoryTotal = preparing.reduce((sum, assessment) => sum + assessment.completeness.mandatoryCount, 0);
+  const mandatoryMissing = preparing.reduce(
+    (sum, assessment) => sum + assessment.completeness.missingMandatory.length,
+    0,
+  );
+  const needAttention = atRisk + incomplete;
 
   return (
     <Page>
@@ -76,23 +47,13 @@ export function OverviewView() {
       >
         {needAttention > 0 ? (
           <>
-            These products have required activities outstanding.{" "}
+            {atRisk} at risk of missing launch and {incomplete} waiting on mandatory information.{" "}
             <Link href="/action-required">See what is holding each one back</Link>
           </>
         ) : (
-          "Every product is ready to launch."
+          "Every product is on track."
         )}
       </StatusAlert>
-
-      {missingTotal > 0 ? (
-        <StatusAlert
-          tone="info"
-          title={`${missingProducts} ${missingProducts === 1 ? "product is" : "products are"} missing required information`}
-        >
-          {missingTotal} {missingTotal === 1 ? "piece" : "pieces"} of information still need someone to provide them.{" "}
-          <Link href="/products?information=missing">See which products</Link>
-        </StatusAlert>
-      ) : null}
 
       <section aria-labelledby="urgent-heading" className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-4">
@@ -105,31 +66,20 @@ export function OverviewView() {
         <ProductsTable products={upcoming} caption="Most urgent upcoming launches" />
       </section>
 
-      <Card role="region" aria-labelledby="outstanding-heading">
+      <Card role="region" aria-labelledby="information-progress-heading">
         <CardHeader>
-          <CardTitle id="outstanding-heading" className="text-xl">
-            Where work is outstanding
+          <CardTitle id="information-progress-heading" className="text-xl">
+            Mandatory information
           </CardTitle>
-          <CardDescription>Completed activities out of those required, across all products.</CardDescription>
+          <CardDescription>
+            The SLA only starts once every mandatory field is complete, so missing information is what delays launches.
+          </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col gap-6">
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {progress.map((row) => (
-              <LabelledProgress
-                key={row.label}
-                label={`${row.label}: ${row.complete} of ${row.total} complete`}
-                value={row.complete}
-                max={row.total}
-              />
-            ))}
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Information is tracked separately from activities. It shows what is known, not what work is done.
-          </p>
+        <CardContent>
           <LabelledProgress
-            label={`Required information available: ${requiredTotal - missingTotal} of ${requiredTotal}`}
-            value={requiredTotal - missingTotal}
-            max={requiredTotal}
+            label={`Mandatory fields complete: ${mandatoryTotal - mandatoryMissing} of ${mandatoryTotal}`}
+            value={mandatoryTotal - mandatoryMissing}
+            max={mandatoryTotal}
           />
         </CardContent>
       </Card>
