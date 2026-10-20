@@ -19,6 +19,18 @@ Mandatory information -> SLA starts -> SLA Projection Date -> compared with the 
 3. The SLA Projection Date is the start date plus the SLA working days.
 4. The status follows from that: **On Track** when the projection is on or before the launch date, **Information Incomplete** while mandatory information is missing, and **Expectation At Risk** when the projection falls after the launch date.
 
+### Statuses, flags and placeholders
+
+- **Statuses** (exactly one per active product): **On Track**, **Information Incomplete** and **Expectation At Risk**. Live, Offsale and Dropped products stay in the table but leave the counts and Action Required.
+- **Flags** sit beside the status and never change it: **Date Changed** (the Proposed Launch Date moved in the last 7 days) and **Stock lands after launch** (the Stock Ready Date is later than the Proposed Launch Date).
+- **Placeholders:** the SLA length (20 working days, 25 for a Guest bed) is labelled as a placeholder wherever it appears. Working days are Monday to Friday and ignore bank holidays, so a projection can be a day or more optimistic than real life. The gap shown for late products is counted in working days.
+
+## How the thinking changed
+
+- **Version 1** modelled each team's workflow as activities.
+- **Version 3** moved to information completeness and SLA risk, because discovery showed that downstream teams track their work in their own systems.
+- **Version 4** added changes from a show-and-tell with the teams who would use it.
+
 ## Screens
 
 | Route | Purpose |
@@ -26,7 +38,7 @@ Mandatory information -> SLA starts -> SLA Projection Date -> compared with the 
 | `/` | Overview: three status cards (At Risk, Information Incomplete, On Track) that add up to the active total, plus the flagged counts |
 | `/products` | Every product, with search, Range, Brand and Critical Path filters, tabs and the Studio view |
 | `/action-required` | The exceptions only: Expectation At Risk and Information Incomplete, ordered by urgency |
-| `/products/[id]` | One product: a banner explaining the cause, the date timeline, field sections (mandatory fields tagged when missing) and the notes log |
+| [`/products/4567890`](/products/4567890) (`/products/[id]`) | One product (the link opens a real seed product): a banner explaining the cause, the date timeline, field sections (mandatory fields tagged when missing) and the notes log |
 | `/how-it-works` | Screen-by-screen guide with screenshots, plus the latest change log download and an expandable history of past versions |
 | `/about` | About this prototype |
 

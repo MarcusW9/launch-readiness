@@ -416,7 +416,7 @@ const PRODUCT_NOTES: Record<string, Array<Omit<ProductNote, "id">>> = {
       text: "Components: frame, worktop, accessories and fixings shipped separately.",
     },
     { ...COMMERCIAL, at: "2026-11-05T11:30", text: "Safety evidence requested from the supplier." },
-    { ...COMMERCIAL, at: "2026-11-02T13:00", text: "Added to the AW26 PH1 plan." },
+    { ...COMMERCIAL, at: "2026-11-02T13:00", text: "Added to the tracker." },
   ],
   "1134567": [
     {

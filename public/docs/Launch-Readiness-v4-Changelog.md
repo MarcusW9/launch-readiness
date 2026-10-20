@@ -31,7 +31,7 @@ Everything in version 3.5 still applies. Its change log is archived and can stil
 | 3 | Studio needs its own view: Cat No, description, brand, trend or customer style preference, asset source (studio, supplier, retouch) and components. They pull this into Excel today to plan shoots. | Studio team | A Studio view with its own columns, filters and an export. | Built (Change 3). |
 | 4 | Job ID is created by the studio when a product is ready to brief, not at the start. | Studio team and review group | This is not Commercial context. Add it later as an optional field entered by the studio. | Later. |
 | 5 | A comments column in the spreadsheet is typed in by Commercial (for example "design insert" or "supplier providing images"). | Review group | A notes log on the product (who, when, text), entered in the app rather than imported. | Built (Change 2). |
-| 6 | Export and a weekly summary: on track, at risk and needs attention. | Review group | Simulate an export and an email preview. A real export and email depend on data governance approval, so they are a later step. | Preview built (Change 4), and the Studio CSV export is built (Change 3). Real export and email later. |
+| 6 | Export and a weekly summary: on track, at risk and needs attention. | Review group | Simulate an export and an email preview. A real export and email depend on data-governance approval, so they are a later step. | Preview built (Change 4), and the Studio CSV export is built (Change 3). Real export and email later. |
 | 7 | Different teams and categories may need different columns. | Review group | Role or category views come later, once the lead for each category has given input. | Later. |
 | 8 | Do not recreate the spreadsheet on the main screen. Extra detail belongs on the product page, in role views or in existing reports. | Review group | This becomes a design principle for version 4 (see below). | Applied to every change. |
 
@@ -129,7 +129,7 @@ The main screen stays simple. Extra columns do not go back onto the Products tab
 1. The prototype is now called Launch Readiness everywhere. The old process name was removed from page titles (How it works, Products, Action Required, About), the README heading and links, the guide copy, the "Added to Launch Readiness" history entries, the Studio CSV file name (`launch-readiness-studio-...csv`) and the weekly summary subject and footer.
 2. The three change logs were renamed to `Launch-Readiness-v4-Changelog.md`, `Launch-Readiness-v3.5-Changelog.md` and `Launch-Readiness-v3-Changelog.md`. Links in the README and the How it works page were updated, and the tests that assert the titles, headings, subject and file names were updated to match.
 3. The About page no longer names internal systems. It now says there is no connection to any product, stock or asset system, or to the spreadsheet it replaces.
-4. Internal jargon in this change log was made generic: "data governance approval", "a comments column in the spreadsheet", "a lead for each category" and "the wider team".
+4. Internal jargon in this change log was made generic: "data-governance approval", "a comments column in the spreadsheet", "a lead for each category" and "the wider team".
 5. The README and the v3 change log no longer mention private design-system packages. The Interface line now reads "Rebuilt on Tailwind CSS and shadcn/ui", and the v3 package notes say the prototype installs from the public registry only.
 6. The filters test product that used a real brand now uses the fictional Hearthwell brand. No assertion referred to the old brand.
 7. `*.tsbuildinfo` was added to `.gitignore`.
@@ -157,11 +157,20 @@ The main screen stays simple. Extra columns do not go back onto the Products tab
 9. **Mobile header fix.** The role switcher and action buttons no longer push the page wider than the screen on phones; they wrap onto their own rows. File: `components/launch/app-shell.tsx`.
 10. **Tests.** Screen, rule, store, seed scenario and documentation tests were rewritten for the new model: 428 automated tests across 34 files, all passing. The browser navigation test no longer expects activity pages; it could not be run in this environment because the browser's system libraries are missing.
 
+## Fix 5a: Wording and documentation clean-up
+
+1. The history entry on every seed product that read "Added to the AW26 PH1 plan." now reads "Added to the tracker." (`lib/launch/data.ts`). No product status or date changed.
+2. "Data governance approval" is hyphenated as "data-governance approval" throughout this change log.
+3. The How it works contents list said "The idea in six steps" while the section says three; the label now matches. File: `lib/launch/guide-content.ts`.
+4. How it works has two new sections. "Flags and placeholders" explains Date Changed, Stock lands after launch, the placeholder SLA length and the working-day limitation. "How the thinking changed" summarises version 1, version 3 and version 4. Both are in the page contents. Files: `components/launch/how-it-works-sections.tsx`, `app/how-it-works/page.tsx`, `lib/launch/guide-content.ts`.
+5. The README has matching "Statuses, flags and placeholders" and "How the thinking changed" sections, and its product page row now links to a real seed product (`/products/4567890`).
+6. Tests: type-check is clean and all 428 tests pass across 34 files.
+
 ## Roadmap: later, not part of version 4
 
 - Job ID, as an optional field entered by the studio when a product is ready to brief.
 - Per-category or per-team views, once a lead is named for each category.
-- A real export and a real weekly email. Both depend on data governance approval.
+- A real export and a real weekly email. Both depend on data-governance approval.
 - Commercial review. Commercial stays out until the prototype is further along.
 
 ## Validation
