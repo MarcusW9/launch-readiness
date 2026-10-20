@@ -68,16 +68,16 @@ export function CriticalPathSummaryStrip({ summary, showCounts = true }: Critica
       {showCounts ? (
         <>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <CountCard label="At Risk" value={counts["At Risk"]} dotClass="bg-danger" />
-            <CountCard label="Action Required" value={counts["Action Required"]} dotClass="bg-warning" />
-            <CountCard label="Ready" value={counts.Ready} dotClass="bg-success" />
+            <CountCard label="At Risk" value={counts["Expectation At Risk"]} dotClass="bg-danger" />
+            <CountCard label="Information Incomplete" value={counts["Information Incomplete"]} dotClass="bg-warning" />
+            <CountCard label="On Track" value={counts["On Track"]} dotClass="bg-success" />
           </div>
 
           <div className="flex flex-col gap-2">
             <h2 className="text-sm font-medium text-muted-foreground">Also flagged</h2>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <CountCard label="Blocked" value={flagged.blocked} dotClass="bg-danger" />
-              <CountCard label="Missing information" value={flagged.missingInformation} dotClass="bg-muted-foreground" />
+              <CountCard label="Date Changed" value={flagged.dateChanged} dotClass="bg-info" />
+              <CountCard label="Stock lands after launch" value={flagged.stockAfterLaunch} dotClass="bg-stock" />
             </div>
           </div>
         </>

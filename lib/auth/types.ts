@@ -1,6 +1,7 @@
-export type Role = "viewer" | "editor";
+/** Downstream team is read-only. Commercial / Range Planning can edit fields and the Proposed Launch Date. */
+export type Role = "downstream" | "commercial";
 
-export type Permission = "product:view" | "note:add" | "activity:update" | "demo:reset";
+export type Permission = "product:view" | "note:add" | "product:edit" | "reminder:send" | "demo:reset";
 
 export interface User {
   id: string;

@@ -12,13 +12,11 @@ import {
   getCategories,
   getCriticalPaths,
   getRanges,
-  readinessOptionsFor,
-  tabForReadiness,
   type ProductFilters,
   type ProductTab,
 } from "@/lib/launch/filters";
 import { summariseCriticalPath } from "@/lib/launch/critical-path";
-import { compareByUrgency } from "@/lib/launch/readiness";
+import { assessAndSort } from "@/lib/launch/readiness-model";
 import { useLaunch } from "@/lib/launch/store";
 import { CriticalPathSummaryStrip } from "./critical-path-summary";
 import { Page, PageHeading } from "./page-frame";
@@ -33,8 +31,7 @@ import { WeeklySummaryDialog } from "./weekly-summary-dialog";
 
 function startingFilters(initialFilters?: Partial<ProductFilters>): ProductFilters {
   const filters = { ...EMPTY_FILTERS, ...initialFilters };
-  const tab = initialFilters?.tab ?? tabForReadiness(filters.readiness) ?? "active";
-  return { ...filters, tab };
+  return { ...filters, tab: initialFilters?.tab ?? "active" };
 }
 
 function hasNarrowingFilters(filters: ProductFilters): boolean {
@@ -60,7 +57,7 @@ export function ProductsView({ initialFilters }: { initialFilters?: Partial<Prod
     [products],
   );
   const visible = useMemo(
-    () => filterProducts(products, filters).sort(compareByUrgency),
+    () => assessAndSort(filterProducts(products, filters)).map((assessment) => assessment.product),
     [products, filters],
   );
   const criticalPathSummary = useMemo(() => summariseCriticalPath(products, filters), [products, filters]);
@@ -69,15 +66,14 @@ export function ProductsView({ initialFilters }: { initialFilters?: Partial<Prod
   const tabLabel = PRODUCT_TABS.find((option) => option.value === tab)?.label.toLowerCase();
 
   function changeTab(next: ProductTab) {
-    const statusStillValid = readinessOptionsFor(next).some((option) => option.value === filters.readiness);
-    setFilters({ ...filters, tab: next, readiness: statusStillValid ? filters.readiness : "all" });
+    setFilters({ ...filters, tab: next, status: next === "active" ? filters.status : "all", flag: next === "active" ? filters.flag : "all" });
   }
 
   return (
     <Page>
       <PageHeading
         title="Products"
-        description="Every product approaching launch, most urgent first. Search or filter to find what you need."
+        description="Every product approaching launch: At Risk first, then Information Incomplete, then On Track. Search or filter to find what you need."
       />
       <ProductsViewSwitch value={view} onChange={setView} />
       {view === "studio" ? (

@@ -9,8 +9,9 @@ import {
   type ReactNode,
 } from "react";
 import { DEMO_TODAY } from "./readiness";
+import type { FieldKey } from "./readiness-config";
 import { createLaunchReducer } from "./store-reducer";
-import type { ActivityKey, InformationKey, NoteRole, Product } from "./types";
+import type { NoteRole, Product } from "./types";
 
 /** Time of day is real; the date stays on the fixed demo date. */
 export function demoNow(): string {
@@ -27,11 +28,9 @@ function newId(prefix: string): string {
 interface LaunchContextValue {
   products: Product[];
   getProduct: (id: string) => Product | undefined;
-  setStage: (productId: string, key: ActivityKey, stageId: string) => void;
-  setBlocked: (productId: string, key: ActivityKey, reason: string | null) => void;
-  addNote: (productId: string, key: ActivityKey, text: string) => void;
-  provideInformation: (productId: string, infoKey: InformationKey, value: string) => void;
   addProductNote: (productId: string, note: { text: string; author: string; role: NoteRole }) => void;
+  editField: (productId: string, key: FieldKey, value: string) => void;
+  changeLaunchDate: (productId: string, date: string) => void;
   resetDemoData: () => void;
 }
 
@@ -63,12 +62,9 @@ export function LaunchProvider({
     () => ({
       products,
       getProduct,
-      setStage: (productId, key, stageId) => dispatch({ type: "set-stage", productId, key, stageId }),
-      setBlocked: (productId, key, reason) => dispatch({ type: "set-blocked", productId, key, reason }),
-      addNote: (productId, key, text) => dispatch({ type: "add-note", productId, key, text }),
-      provideInformation: (productId, infoKey, value) =>
-        dispatch({ type: "provide-information", productId, infoKey, value }),
       addProductNote: (productId, note) => dispatch({ type: "add-product-note", productId, ...note }),
+      editField: (productId, key, value) => dispatch({ type: "edit-field", productId, key, value }),
+      changeLaunchDate: (productId, date) => dispatch({ type: "change-launch-date", productId, date }),
       resetDemoData: () => dispatch({ type: "reset" }),
     }),
     [products, getProduct],

@@ -31,6 +31,8 @@
   --danger-subtle: oklch(0.96 0.03 27);
   --info: oklch(0.42 0.09 230);
   --info-subtle: oklch(0.96 0.02 230);
+  --stock: oklch(0.47 0.15 45);
+  --stock-subtle: oklch(0.96 0.04 50);
   --radius: 0.5rem;
 }
 
@@ -61,6 +63,8 @@
   --danger-subtle: oklch(0.29 0.06 25);
   --info: oklch(0.8 0.09 230);
   --info-subtle: oklch(0.28 0.04 235);
+  --stock: oklch(0.78 0.13 50);
+  --stock-subtle: oklch(0.3 0.06 45);
 }
 
 @theme inline {
@@ -92,6 +96,8 @@
   --color-danger-subtle: var(--danger-subtle);
   --color-info: var(--info);
   --color-info-subtle: var(--info-subtle);
+  --color-stock: var(--stock);
+  --color-stock-subtle: var(--stock-subtle);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);

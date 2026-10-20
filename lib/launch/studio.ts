@@ -1,6 +1,7 @@
 import { EMPTY_FILTERS, filterProducts, getProductTab, NOT_ASSIGNED } from "./filters";
 import { getSelectedCriticalPath } from "./critical-path";
-import { DEMO_TODAY, summariseReadiness } from "./readiness";
+import { DEMO_TODAY } from "./readiness";
+import { assessProduct, STATUS_CARD_LABEL } from "./readiness-model";
 import type { Product } from "./types";
 
 export const NOT_PROVIDED = "Not provided";
@@ -43,7 +44,7 @@ export const STUDIO_COLUMNS: StudioColumn[] = [
   { key: "videoSource", header: "Video source", read: (product) => product.studio?.videoSource },
   { key: "components", header: "Components", read: (product) => product.studio?.components },
   { key: "launch", header: "Proposed Launch", read: (product) => product.launchDate },
-  { key: "status", header: "Status", read: (product) => summariseReadiness(product).launchStatus },
+  { key: "status", header: "Status", read: (product) => product.lifecycle ?? STATUS_CARD_LABEL[assessProduct(product).status] },
 ];
 
 /** What a cell shows: the value, or "Not provided" when there is none. */
@@ -83,7 +84,7 @@ export function compareByLaunch(a: Product, b: Product): number {
   return a.launchDate.localeCompare(b.launchDate) || a.id.localeCompare(b.id);
 }
 
-/** Active products matching the Studio filters, soonest launch first. The search matches the same fields as the Exceptions view. */
+/** Active products matching the Studio filters, soonest launch first. The search matches the same fields as the Products view. */
 export function filterStudioProducts(products: Product[], filters: StudioFilters): Product[] {
   return filterProducts(products, {
     ...EMPTY_FILTERS,
@@ -96,7 +97,7 @@ export function filterStudioProducts(products: Product[], filters: StudioFilters
     .sort(compareByLaunch);
 }
 
-/** The one critical path the Studio list is focused on, or undefined. Same rule as the Exceptions view. */
+/** The one critical path the Studio list is focused on, or undefined. Same rule as the Products view. */
 export function getStudioCriticalPath(products: Product[], filters: StudioFilters): string | undefined {
   return getSelectedCriticalPath(products, { ...EMPTY_FILTERS, query: filters.query, criticalPath: filters.criticalPath });
 }
