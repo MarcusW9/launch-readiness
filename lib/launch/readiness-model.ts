@@ -2,7 +2,7 @@ import { assessCompleteness, type Completeness } from "./completeness";
 import { DATE_CHANGED_WITHIN_DAYS } from "./readiness-config";
 import { DEMO_TODAY, daysUntil } from "./readiness";
 import { infoCompleteAt, slaProjectionDate, slaWorkingDays } from "./sla";
-import type { Product } from "./types";
+import type { Product, ProductLifecycle } from "./types";
 import { addWorkingDays, pluralise, workingDaysBetween } from "./working-days";
 
 /** Calculated from the information and the dates. Never set by hand. */
@@ -75,6 +75,20 @@ export function assessProduct(product: Product, today: string = DEMO_TODAY): Mod
       dataErrors: completeness.dataErrorsInMandatory.length + completeness.dataErrorsInOptional.length > 0,
     },
   };
+}
+
+/** What the status badge shows: the lifecycle once a product has one, otherwise the calculated status. */
+export type DisplayStatus = ModelStatus | ProductLifecycle;
+
+/** The status-card label for each calculated status. "Expectation At Risk" is shown as "At Risk" on cards and filters. */
+export const STATUS_CARD_LABEL: Record<ModelStatus, string> = {
+  "Expectation At Risk": "At Risk",
+  "Information Incomplete": "Information Incomplete",
+  "On Track": "On Track",
+};
+
+export function displayStatus(assessment: ModelAssessment): DisplayStatus {
+  return assessment.product.lifecycle ?? assessment.status;
 }
 
 /** "Launch in 10 working days", shown under the launch date. */

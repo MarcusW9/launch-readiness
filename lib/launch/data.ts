@@ -1,52 +1,12 @@
-import { INFORMATION_DEFINITIONS, INFORMATION_ORDER } from "./information";
 import type { FieldKey } from "./readiness-config";
-import type {
-  ActivityState,
-  HistoryEntry,
-  InformationKey,
-  Note,
-  Product,
-  ProductNote,
-  StudioDetails,
-} from "./types";
+import type { Product, ProductNote, StudioDetails } from "./types";
 
 /**
  * SYNTHETIC DEMO DATA ONLY. Product names, IDs and statuses are fictional and
  * are not taken from any operational system.
  */
 
-let seq = 0;
-const nextId = (prefix: string) => `${prefix}-${++seq}`;
-
-interface StateOptions {
-  blocked?: string;
-  notes?: Array<Pick<Note, "at" | "author" | "text">>;
-  history?: Array<Pick<HistoryEntry, "at" | "text">>;
-}
-
-function state(stage: string, options: StateOptions = {}): ActivityState {
-  const history: HistoryEntry[] = (
-    options.history ?? [{ at: "2026-11-02T09:00", text: "Added to Launch Readiness" }]
-  ).map((entry) => ({ id: nextId("h"), ...entry }));
-
-  return {
-    stage,
-    blocked: Boolean(options.blocked),
-    blockedReason: options.blocked,
-    notes: (options.notes ?? []).map((note) => ({ id: nextId("n"), ...note })),
-    history,
-  };
-}
-
-const done = (at = "2026-11-05T11:30") =>
-  state("complete", {
-    history: [
-      { at: "2026-11-02T09:00", text: "Added to Launch Readiness" },
-      { at, text: "Marked Complete" },
-    ],
-  });
-
-type RawProduct = Omit<Product, "information">;
+type RawProduct = Product;
 
 const RAW_PRODUCTS: RawProduct[] = [
   {
@@ -65,25 +25,6 @@ const RAW_PRODUCTS: RawProduct[] = [
       ],
       styling: "Warm neutral living room. Show the sofa in the oatmeal and moss colourways.",
     },
-    activities: {
-      "product-setup": done("2026-11-03T10:00"),
-      variants: done("2026-11-05T14:20"),
-      "studio-imagery": state("in-progress", {
-        history: [
-          { at: "2026-11-02T09:00", text: "Added to Launch Readiness" },
-          { at: "2026-11-04T10:15", text: "Moved to Briefed" },
-          { at: "2026-11-06T16:40", text: "Moved to In Progress" },
-        ],
-        notes: [
-          {
-            at: "2026-11-06T16:45",
-            author: "Studio team",
-            text: "Sample arrived in studio. Shoot provisionally booked for 12 Nov.",
-          },
-        ],
-      }),
-      "product-content": done("2026-11-07T09:10"),
-    },
   },
   {
     id: "2345678",
@@ -98,20 +39,6 @@ const RAW_PRODUCTS: RawProduct[] = [
       complianceReason:
         "this is an electrical product that needs safety and energy label documentation.",
     },
-    activities: {
-      "product-setup": done(),
-      "supplier-imagery": done("2026-11-06T13:00"),
-      "product-content": state("in-progress", {
-        notes: [
-          {
-            at: "2026-11-08T10:05",
-            author: "Content team",
-            text: "Waiting on final spec sheet from supplier before the feature list can be signed off.",
-          },
-        ],
-      }),
-      compliance: state("not-started"),
-    },
   },
   {
     id: "3456789",
@@ -123,20 +50,6 @@ const RAW_PRODUCTS: RawProduct[] = [
     studioBrief: {
       requiredImagery: ["Hero bed shot", "Flat lay of set contents", "2 fabric detail shots"],
       styling: "Soft daylight, crumpled linen look, natural tones.",
-    },
-    activities: {
-      "product-setup": done(),
-      variants: state("in-progress", {
-        notes: [
-          {
-            at: "2026-11-09T15:30",
-            author: "Product team",
-            text: "Single and double created. King and super king still to add.",
-          },
-        ],
-      }),
-      "studio-imagery": done("2026-11-08T17:00"),
-      "product-content": done("2026-11-09T11:00"),
     },
   },
   {
@@ -155,12 +68,6 @@ const RAW_PRODUCTS: RawProduct[] = [
       requiredImagery: ["Hero stack shot", "Table setting lifestyle", "Piece-by-piece line-up"],
       styling: "Bright, minimal table setting.",
     },
-    activities: {
-      "product-setup": done(),
-      "studio-imagery": done("2026-11-04T16:00"),
-      "product-content": done("2026-11-06T10:00"),
-      compliance: done("2026-11-07T12:00"),
-    },
   },
   {
     id: "5678901",
@@ -178,26 +85,6 @@ const RAW_PRODUCTS: RawProduct[] = [
       requiredImagery: ["Hero shot", "Child-play lifestyle", "3 feature close-ups", "Scale shot"],
       styling: "Bright playroom, natural light.",
     },
-    activities: {
-      "product-setup": done(),
-      "studio-imagery": state("briefed", {
-        blocked: "Waiting on samples",
-        history: [
-          { at: "2026-11-02T09:00", text: "Added to Launch Readiness" },
-          { at: "2026-11-06T10:00", text: "Moved to Briefed" },
-          { at: "2026-11-09T09:20", text: "Flagged as Blocked: Waiting on samples" },
-        ],
-        notes: [
-          {
-            at: "2026-11-09T09:20",
-            author: "Launch manager",
-            text: "Sample delayed in transit. Needs a studio slot this week to hit launch.",
-          },
-        ],
-      }),
-      "product-content": state("in-progress"),
-      compliance: state("in-progress"),
-    },
   },
   {
     id: "6789012",
@@ -212,12 +99,6 @@ const RAW_PRODUCTS: RawProduct[] = [
       complianceReason:
         "major appliances need energy label and safety documentation.",
     },
-    activities: {
-      "product-setup": done(),
-      "supplier-imagery": done("2026-11-07T10:30"),
-      "product-content": state("not-started"),
-      compliance: done("2026-11-08T14:00"),
-    },
   },
   {
     id: "7890123",
@@ -229,20 +110,6 @@ const RAW_PRODUCTS: RawProduct[] = [
     studioBrief: {
       requiredImagery: ["Hero bed shot", "Pattern close-up", "Kids bedroom lifestyle"],
       styling: "Playful kids bedroom, bright and clean.",
-    },
-    activities: {
-      "product-setup": done(),
-      variants: state("in-progress", {
-        notes: [
-          {
-            at: "2026-11-09T12:00",
-            author: "Product team",
-            text: "8 of 9 size and colour combinations created. Only Age 7-8 in rainbow is still to create.",
-          },
-        ],
-      }),
-      "studio-imagery": done("2026-11-08T16:30"),
-      "product-content": done("2026-11-09T09:45"),
     },
   },
   {
@@ -261,19 +128,6 @@ const RAW_PRODUCTS: RawProduct[] = [
       requiredImagery: ["Hero shot", "Lifestyle in kitchen", "Control panel close-up"],
       styling: "Modern kitchen worktop.",
     },
-    activities: {
-      "product-setup": done(),
-      "studio-imagery": done("2026-11-06T15:00"),
-      "product-content": done("2026-11-07T16:00"),
-      compliance: state("in-progress", {
-        blocked: "Waiting on supplier test certificate",
-        history: [
-          { at: "2026-11-02T09:00", text: "Added to Launch Readiness" },
-          { at: "2026-11-05T10:00", text: "Moved to In Progress" },
-          { at: "2026-11-09T08:30", text: "Flagged as Blocked: Waiting on supplier test certificate" },
-        ],
-      }),
-    },
   },
   {
     id: "9012345",
@@ -285,12 +139,6 @@ const RAW_PRODUCTS: RawProduct[] = [
     studioBrief: {
       requiredImagery: ["Hero set shot", "Sofa styling shot"],
       styling: "Layered neutrals on a linen sofa.",
-    },
-    activities: {
-      "product-setup": done(),
-      variants: done(),
-      "studio-imagery": done("2026-11-06T11:00"),
-      "product-content": done("2026-11-08T09:00"),
     },
   },
   {
@@ -305,20 +153,6 @@ const RAW_PRODUCTS: RawProduct[] = [
       ownBrand: false,
       complianceReason: "it is a rechargeable electrical product that needs safety documentation.",
     },
-    activities: {
-      "product-setup": done(),
-      "supplier-imagery": state("in-progress", {
-        notes: [
-          {
-            at: "2026-11-08T13:15",
-            author: "Content team",
-            text: "Supplier sent 4 of 7 images. Two do not meet the white background standard.",
-          },
-        ],
-      }),
-      "product-content": done("2026-11-07T15:00"),
-      compliance: done("2026-11-08T10:00"),
-    },
   },
   {
     id: "1134567",
@@ -330,20 +164,6 @@ const RAW_PRODUCTS: RawProduct[] = [
     studioBrief: {
       requiredImagery: ["Hero shot", "Dining room lifestyle", "Leg and joint detail", "Dimensions shot"],
       styling: "Dining room with six chairs, natural wood tones.",
-    },
-    activities: {
-      "product-setup": done(),
-      variants: state("not-started"),
-      "studio-imagery": state("required"),
-      "product-content": state("in-progress", {
-        notes: [
-          {
-            at: "2026-11-09T14:40",
-            author: "Content team",
-            text: "Conflicting information: the supplier spec sheet gives a table width of 160cm but the product record says 180cm. Needs confirming before the content can be signed off.",
-          },
-        ],
-      }),
     },
   },
   {
@@ -362,20 +182,6 @@ const RAW_PRODUCTS: RawProduct[] = [
       requiredImagery: ["Hero lit shot", "Bedroom lifestyle", "Plug and controller detail"],
       styling: "Dark backdrop so the lights show clearly.",
     },
-    activities: {
-      "product-setup": done(),
-      "studio-imagery": done("2026-11-07T17:30"),
-      "product-content": state("in-progress", {
-        notes: [
-          {
-            at: "2026-11-09T16:10",
-            author: "Content team",
-            text: "Copy drafted, awaiting legal review of the safety wording.",
-          },
-        ],
-      }),
-      compliance: done("2026-11-08T11:00"),
-    },
   },
   {
     id: "1356789",
@@ -388,12 +194,6 @@ const RAW_PRODUCTS: RawProduct[] = [
       hasVariants: false,
       ownBrand: false,
       complianceReason: "it is a mains-powered electrical product that needs safety documentation.",
-    },
-    activities: {
-      "product-setup": done(),
-      "supplier-imagery": done("2026-11-04T09:30"),
-      "product-content": done("2026-11-06T14:00"),
-      compliance: done("2026-11-07T10:30"),
     },
   },
   {
@@ -412,18 +212,6 @@ const RAW_PRODUCTS: RawProduct[] = [
       requiredImagery: ["Hero shot", "Garden lifestyle", "Cushion and weave detail", "Dimensions shot"],
       styling: "Sunny patio setting. Show the grey and natural colourways.",
     },
-    activities: {
-      "product-setup": done(),
-      variants: state("not-started"),
-      "studio-imagery": state("briefed", {
-        history: [
-          { at: "2026-11-02T09:00", text: "Added to Launch Readiness" },
-          { at: "2026-11-09T14:00", text: "Moved to Briefed" },
-        ],
-      }),
-      "product-content": state("not-started"),
-      compliance: state("in-progress"),
-    },
   },
   {
     id: "1578901",
@@ -437,12 +225,6 @@ const RAW_PRODUCTS: RawProduct[] = [
       ownBrand: false,
       complianceReason: "toys with batteries must have safety test documentation before sale.",
     },
-    activities: {
-      "product-setup": done(),
-      "supplier-imagery": done("2026-11-05T12:00"),
-      "product-content": done("2026-11-07T11:00"),
-      compliance: done("2026-11-09T10:15"),
-    },
   },
   {
     id: "1912345",
@@ -454,11 +236,6 @@ const RAW_PRODUCTS: RawProduct[] = [
     studioBrief: {
       requiredImagery: ["Hero shot", "Spare room lifestyle", "Folded away shot"],
       styling: "Calm spare room, white linen, natural light.",
-    },
-    activities: {
-      "product-setup": done("2026-11-03T10:00"),
-      "studio-imagery": done("2026-11-06T15:30"),
-      "product-content": done("2026-11-09T10:00"),
     },
   },
   {
@@ -473,11 +250,6 @@ const RAW_PRODUCTS: RawProduct[] = [
       requiredImagery: ["Hero shot", "Bathroom lifestyle"],
       styling: "Light, airy bathroom shelf.",
     },
-    activities: {
-      "product-setup": done("2026-10-05T10:00"),
-      "studio-imagery": done("2026-10-08T15:00"),
-      "product-content": done("2026-10-12T11:00"),
-    },
   },
   {
     id: "1790123",
@@ -490,12 +262,6 @@ const RAW_PRODUCTS: RawProduct[] = [
     studioBrief: {
       requiredImagery: ["Hero shot", "Living room lifestyle"],
       styling: "Reading corner with a floor lamp.",
-    },
-    activities: {
-      "product-setup": done("2026-09-01T10:00"),
-      variants: done("2026-09-03T14:00"),
-      "studio-imagery": done("2026-09-06T16:00"),
-      "product-content": done("2026-09-08T09:30"),
     },
   },
   {
@@ -515,36 +281,8 @@ const RAW_PRODUCTS: RawProduct[] = [
       requiredImagery: ["Hero shot", "Garden play lifestyle"],
       styling: "Sunny lawn, bright colours.",
     },
-    activities: {
-      "product-setup": done(),
-      "studio-imagery": state("required"),
-      "product-content": state("not-started"),
-      compliance: state("not-started"),
-    },
   },
 ];
-
-/**
- * Information still missing for each demo product. Everything else is seeded
- * as already known, so the demo shows people are never asked for what exists.
- */
-const MISSING_INFORMATION: Record<string, InformationKey[]> = {
-  "2345678": ["spec-sheet", "safety-evidence"],
-  "4567890": [],
-  "5678901": ["sample-availability", "safety-evidence"],
-  "6789012": ["spec-sheet"],
-  "8901234": ["safety-evidence"],
-  "1134567": ["photography-instructions", "variant-options", "sample-availability"],
-  "1245678": [],
-  "1801234": ["photography-instructions", "spec-sheet", "safety-evidence"],
-  "1467890": [
-    "variant-options",
-    "styling-direction",
-    "sample-availability",
-    "spec-sheet",
-    "safety-evidence",
-  ],
-};
 
 /** Planning range and critical path for each demo product. Absent means not assigned. */
 const PLANNING: Record<string, Pick<Product, "range" | "criticalPath">> = {
@@ -697,21 +435,6 @@ let noteSeq = 0;
 const seedNotes = (productId: string): ProductNote[] =>
   (PRODUCT_NOTES[productId] ?? []).map((note) => ({ id: `pn-seed-${++noteSeq}`, ...note }));
 
-function seedInformation(product: RawProduct): Product["information"] {
-  const missing = new Set(MISSING_INFORMATION[product.id] ?? []);
-  const information: Product["information"] = {};
-  for (const key of INFORMATION_ORDER) {
-    if (missing.has(key)) continue;
-    const definition = INFORMATION_DEFINITIONS[key];
-    information[key] = {
-      value: definition.sampleValue(product as Product),
-      source: definition.defaultSource,
-      at: "2026-11-02T09:00",
-    };
-  }
-  return information;
-}
-
 /**
  * Seed details for the weekly summary's "Changed this week" section. They are display-only:
  * launchDate itself is untouched, so no status, date or calculation depends on them.
@@ -787,6 +510,29 @@ const INFO_COMPLETE_AT: Record<string, string> = {
   "1912345": "2026-11-02",
 };
 
+/** The date each product was entered in the PIM. Always on or before the date its information was completed. */
+const PIM_DATES: Record<string, string> = {
+  "1234567": "2026-10-27",
+  "2345678": "2026-10-05",
+  "3456789": "2026-10-12",
+  "4567890": "2026-10-19",
+  "5678901": "2026-10-28",
+  "6789012": "2026-10-15",
+  "7890123": "2026-10-20",
+  "8901234": "2026-10-07",
+  "9012345": "2026-10-22",
+  "1023456": "2026-10-08",
+  "1134567": "2026-11-02",
+  "1245678": "2026-09-29",
+  "1356789": "2026-10-12",
+  "1467890": "2026-10-21",
+  "1578901": "2026-10-05",
+  "1689012": "2026-09-07",
+  "1790123": "2026-08-10",
+  "1801234": "2026-10-30",
+  "1912345": "2026-10-26",
+};
+
 function seedFields(product: RawProduct): Product["fields"] {
   const planning = PLANNING[product.id];
   const season = planning?.criticalPath?.split(" ")[0];
@@ -815,7 +561,7 @@ export const SEED_PRODUCTS: Product[] = RAW_PRODUCTS.map((product) => ({
   ...WEEKLY_CHANGES[product.id],
   studio: STUDIO_DETAILS[product.id],
   fields: seedFields(product),
+  pimDate: PIM_DATES[product.id],
   infoCompleteAt: INFO_COMPLETE_AT[product.id],
-  information: seedInformation(product),
   notes: seedNotes(product.id),
 }));

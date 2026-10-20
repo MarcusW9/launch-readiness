@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
-import { summariseReadiness } from "@/lib/launch/readiness";
+import { assessProduct, STATUS_CARD_LABEL, type ModelStatus } from "@/lib/launch/readiness-model";
 import { useLaunch } from "@/lib/launch/store";
 
 interface SummaryItem {
@@ -15,14 +15,9 @@ interface SummaryItem {
 
 export function SummaryCards() {
   const { products } = useLaunch();
-  const preparing = products.filter((product) => summariseReadiness(product).isPreparing);
-  const counts = preparing.reduce(
-    (acc, product) => {
-      acc[summariseReadiness(product).readiness] += 1;
-      return acc;
-    },
-    { Ready: 0, "Action Required": 0, "At Risk": 0 },
-  );
+  const preparing = products.map((product) => assessProduct(product)).filter((assessment) => assessment.isPreparing);
+  const counts: Record<ModelStatus, number> = { "Expectation At Risk": 0, "Information Incomplete": 0, "On Track": 0 };
+  for (const assessment of preparing) counts[assessment.status] += 1;
 
   const items: SummaryItem[] = [
     {
@@ -33,32 +28,36 @@ export function SummaryCards() {
       dotClass: "bg-muted-foreground",
     },
     {
-      label: "Ready",
-      value: counts.Ready,
-      helper: "All required activities complete",
-      href: "/products?readiness=Ready",
-      dotClass: "bg-success",
+      label: STATUS_CARD_LABEL["Expectation At Risk"],
+      value: counts["Expectation At Risk"],
+      helper: "Projected to be ready after the launch date",
+      href: "/products?status=Expectation%20At%20Risk",
+      dotClass: "bg-danger",
     },
     {
-      label: "Action Required",
-      value: counts["Action Required"],
-      helper: "Activities outstanding",
-      href: "/products?readiness=Action%20Required",
+      label: STATUS_CARD_LABEL["Information Incomplete"],
+      value: counts["Information Incomplete"],
+      helper: "Mandatory information still missing",
+      href: "/products?status=Information%20Incomplete",
       dotClass: "bg-warning",
     },
     {
-      label: "At Risk",
-      value: counts["At Risk"],
-      helper: "Outstanding and launching within 10 days",
-      href: "/products?readiness=At%20Risk",
-      dotClass: "bg-danger",
+      label: STATUS_CARD_LABEL["On Track"],
+      value: counts["On Track"],
+      helper: "Projected to be ready in time",
+      href: "/products?status=On%20Track",
+      dotClass: "bg-success",
     },
   ];
 
   return (
     <section aria-label="Launch readiness summary" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {items.map((item) => (
-        <Link key={item.label} href={item.href} className="block h-full rounded-xl outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
+        <Link
+          key={item.label}
+          href={item.href}
+          className="block h-full rounded-xl outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
           <Card className="h-full transition-colors hover:bg-muted/50">
             <CardContent className="flex flex-col gap-2">
               <span className="flex items-center gap-2 text-sm font-medium text-muted-foreground">

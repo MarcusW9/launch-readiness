@@ -1,16 +1,11 @@
-import { ACTIVITY_DEFINITIONS, resolveActivity, resolveImagery } from "./activities";
-import { HAS_MISSING_INFORMATION_LABEL } from "./copy";
-import { getMissingInformation } from "./information-overview";
-import { summariseReadiness } from "./readiness";
-import type { ActivityKey, LaunchStatus, Product } from "./types";
+import { assessProduct, STATUS_CARD_LABEL, type ModelStatus } from "./readiness-model";
+import { daysUntil } from "./readiness";
+import type { Product } from "./types";
 
 export type LaunchWindow = "all" | "7" | "14" | "30" | "later";
-export type OutstandingFilter =
-  | "all"
-  | "imagery"
-  | Exclude<ActivityKey, "studio-imagery" | "supplier-imagery">;
 
-export type InformationFilter = "all" | "missing";
+/** Extra flags shown beside the status. A product can carry both. */
+export type FlagFilter = "all" | "dateChanged" | "stockAfterLaunch";
 
 /** Where a product sits in its life: still being prepared, launched, or dropped. */
 export type ProductTab = "active" | "launched" | "dropped";
@@ -32,10 +27,9 @@ export interface ProductFilters {
   criticalPath: string;
   /** "all" matches every tab, which keeps this module usable without the tab UI. */
   tab: "all" | ProductTab;
-  readiness: "all" | LaunchStatus;
+  status: "all" | ModelStatus;
+  flag: FlagFilter;
   window: LaunchWindow;
-  outstanding: OutstandingFilter;
-  information: InformationFilter;
 }
 
 export const EMPTY_FILTERS: ProductFilters = {
@@ -45,40 +39,15 @@ export const EMPTY_FILTERS: ProductFilters = {
   brand: "all",
   criticalPath: "all",
   tab: "all",
-  readiness: "all",
+  status: "all",
+  flag: "all",
   window: "all",
-  outstanding: "all",
-  information: "all",
 };
 
 export function getProductTab(product: Product): ProductTab {
   if (product.lifecycle === "Dropped") return "dropped";
   if (product.lifecycle === "Live" || product.lifecycle === "Offsale") return "launched";
   return "active";
-}
-
-export function tabForReadiness(readiness: ProductFilters["readiness"]): ProductTab | undefined {
-  if (readiness === "all") return undefined;
-  if (readiness === "Dropped") return "dropped";
-  if (readiness === "Live" || readiness === "Offsale") return "launched";
-  return "active";
-}
-
-/** Status options that can match something on the given tab. */
-export function readinessOptionsFor(tab: ProductFilters["tab"]): typeof READINESS_OPTIONS {
-  if (tab === "all") return READINESS_OPTIONS;
-  return READINESS_OPTIONS.filter(
-    (option) => option.value === "all" || tabForReadiness(option.value) === tab,
-  );
-}
-
-export const INFORMATION_OPTIONS: Array<{ value: InformationFilter; label: string }> = [
-  { value: "all", label: "Any information" },
-  { value: "missing", label: HAS_MISSING_INFORMATION_LABEL },
-];
-
-export function isInformationFilter(value: string | undefined): value is InformationFilter {
-  return value === "all" || value === "missing";
 }
 
 export const LAUNCH_WINDOW_OPTIONS: Array<{ value: LaunchWindow; label: string }> = [
@@ -89,45 +58,25 @@ export const LAUNCH_WINDOW_OPTIONS: Array<{ value: LaunchWindow; label: string }
   { value: "later", label: "More than 30 days away" },
 ];
 
-export const OUTSTANDING_OPTIONS: Array<{ value: OutstandingFilter; label: string }> = [
-  { value: "all", label: "Any activity" },
-  { value: "imagery", label: "Imagery outstanding" },
-  { value: "product-content", label: "Content outstanding" },
-  { value: "variants", label: "Variants outstanding" },
-  { value: "compliance", label: "Compliance outstanding" },
-  { value: "product-setup", label: "Product setup outstanding" },
-];
-
-export const READINESS_OPTIONS: Array<{ value: ProductFilters["readiness"]; label: string }> = [
+export const STATUS_OPTIONS: Array<{ value: ProductFilters["status"]; label: string }> = [
   { value: "all", label: "All statuses" },
-  { value: "Ready", label: "Ready" },
-  { value: "Action Required", label: "Action Required" },
-  { value: "At Risk", label: "At Risk" },
-  { value: "Live", label: "Live" },
-  { value: "Offsale", label: "Offsale" },
-  { value: "Dropped", label: "Dropped" },
+  { value: "Expectation At Risk", label: STATUS_CARD_LABEL["Expectation At Risk"] },
+  { value: "Information Incomplete", label: STATUS_CARD_LABEL["Information Incomplete"] },
+  { value: "On Track", label: STATUS_CARD_LABEL["On Track"] },
 ];
 
-export function isReadinessFilter(value: string | undefined): value is LaunchStatus {
-  return (
-    value === "Ready" ||
-    value === "Action Required" ||
-    value === "At Risk" ||
-    value === "Live" ||
-    value === "Offsale" ||
-    value === "Dropped"
-  );
+export const FLAG_OPTIONS: Array<{ value: FlagFilter; label: string }> = [
+  { value: "all", label: "Any flag" },
+  { value: "dateChanged", label: "Date Changed" },
+  { value: "stockAfterLaunch", label: "Stock lands after launch" },
+];
+
+export function isStatusFilter(value: string | undefined): value is ModelStatus {
+  return value === "Expectation At Risk" || value === "Information Incomplete" || value === "On Track";
 }
 
-export function isOutstandingFilter(value: string | undefined): value is OutstandingFilter {
-  return OUTSTANDING_OPTIONS.some((option) => option.value === value);
-}
-
-function hasOutstanding(product: Product, filter: OutstandingFilter): boolean {
-  if (filter === "all") return true;
-  if (!summariseReadiness(product).isPreparing) return false;
-  const activity = filter === "imagery" ? resolveImagery(product) : resolveActivity(product, filter);
-  return activity.applies && activity.status !== "Complete";
+export function isFlagFilter(value: string | undefined): value is Exclude<FlagFilter, "all"> {
+  return value === "dateChanged" || value === "stockAfterLaunch";
 }
 
 export function filterProducts(products: Product[], filters: ProductFilters): Product[] {
@@ -147,11 +96,14 @@ export function filterProducts(products: Product[], filters: ProductFilters): Pr
       return false;
     }
 
-    const summary = summariseReadiness(product);
-    if (filters.readiness !== "all" && summary.launchStatus !== filters.readiness) return false;
+    const assessment = assessProduct(product);
+    if (filters.status !== "all" && (!assessment.isPreparing || assessment.status !== filters.status)) {
+      return false;
+    }
+    if (filters.flag !== "all" && !(assessment.isPreparing && assessment.flags[filters.flag])) return false;
 
     if (filters.window !== "all") {
-      const days = summary.daysToLaunch;
+      const days = daysUntil(product.launchDate);
       if (filters.window === "later") {
         if (days <= 30) return false;
       } else if (days < 0 || days > Number(filters.window)) {
@@ -159,9 +111,7 @@ export function filterProducts(products: Product[], filters: ProductFilters): Pr
       }
     }
 
-    if (filters.information === "missing" && getMissingInformation(product).length === 0) return false;
-
-    return hasOutstanding(product, filters.outstanding);
+    return true;
   });
 }
 
@@ -194,8 +144,4 @@ export function countByTab(products: Product[], filters: ProductFilters): Record
     counts[getProductTab(product)] += 1;
   }
   return counts;
-}
-
-export function activityLabel(key: ActivityKey): string {
-  return ACTIVITY_DEFINITIONS[key].name;
 }

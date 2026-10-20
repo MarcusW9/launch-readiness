@@ -1,7 +1,6 @@
 import { filterProducts, NOT_ASSIGNED, type ProductFilters } from "./filters";
-import { getMissingInformation } from "./information-overview";
-import { summariseReadiness } from "./readiness";
-import type { Product, Readiness } from "./types";
+import { assessProduct, type ModelStatus } from "./readiness-model";
+import type { Product } from "./types";
 
 export interface LaunchDateCount {
   date: string;
@@ -15,8 +14,8 @@ export interface CriticalPathSummary {
   mainDate: string | undefined;
   /** Every other proposed launch date in the path, most common first. */
   otherDates: LaunchDateCount[];
-  counts: Record<Readiness, number>;
-  flagged: { blocked: number; missingInformation: number };
+  counts: Record<ModelStatus, number>;
+  flagged: { dateChanged: number; stockAfterLaunch: number };
 }
 
 /**
@@ -60,15 +59,15 @@ export function summariseCriticalPath(
     (product) => product.criticalPath === name,
   );
   const [main, ...others] = countLaunchDates(active);
-  const counts: Record<Readiness, number> = { Ready: 0, "Action Required": 0, "At Risk": 0 };
-  let blocked = 0;
-  let missingInformation = 0;
+  const counts: Record<ModelStatus, number> = { "Expectation At Risk": 0, "Information Incomplete": 0, "On Track": 0 };
+  let dateChanged = 0;
+  let stockAfterLaunch = 0;
 
   for (const product of active) {
-    const summary = summariseReadiness(product);
-    counts[summary.readiness] += 1;
-    if (summary.outstanding.some((activity) => activity.status === "Blocked")) blocked += 1;
-    if (getMissingInformation(product).length > 0) missingInformation += 1;
+    const assessment = assessProduct(product);
+    counts[assessment.status] += 1;
+    if (assessment.flags.dateChanged) dateChanged += 1;
+    if (assessment.flags.stockAfterLaunch) stockAfterLaunch += 1;
   }
 
   return {
@@ -77,6 +76,6 @@ export function summariseCriticalPath(
     mainDate: main?.date,
     otherDates: others,
     counts,
-    flagged: { blocked, missingInformation },
+    flagged: { dateChanged, stockAfterLaunch },
   };
 }
